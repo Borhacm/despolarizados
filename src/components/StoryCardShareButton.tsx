@@ -9,6 +9,8 @@ type Props = {
   title: string;
   shareUrl: string;
   visual?: HistoriaShareVisualPayload | null;
+  /** Por defecto empuja el botón al final (listados). En ficha de historia usar false. */
+  alignEnd?: boolean;
 };
 
 export function StoryCardShareButton({
@@ -16,6 +18,7 @@ export function StoryCardShareButton({
   title,
   shareUrl,
   visual = null,
+  alignEnd = true,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -28,7 +31,11 @@ export function StoryCardShareButton({
           e.stopPropagation();
           setOpen(true);
         }}
-        className="ml-auto inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-emerald-700 sm:min-h-0 sm:min-w-0 sm:justify-start sm:px-0 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-emerald-300"
+        className={
+          alignEnd
+            ? "ml-auto inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-emerald-700 sm:min-h-0 sm:min-w-0 sm:justify-start sm:px-0 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-emerald-300"
+            : "inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-emerald-700 sm:min-h-0 sm:min-w-0 sm:justify-start sm:px-0 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-emerald-300"
+        }
         aria-expanded={open}
         aria-haspopup="dialog"
         title="Compartir esta historia"

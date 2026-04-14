@@ -68,21 +68,24 @@ export function CoverageMixBar({
         ) : null}
       </div>
       <div
-        className={`flex w-full flex-wrap justify-between gap-x-1 gap-y-0.5 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 ${text}`}
+        className={`grid w-full min-w-0 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 ${text}`}
+        style={{
+          gridTemplateColumns: `${izqPct}% ${centroPct}% ${derPct}%`,
+        }}
       >
-        <span className={size === "featured" ? "min-w-0" : undefined}>
+        <span className="min-w-0 truncate text-left">
           Izq{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(izqPct)}%
           </span>
         </span>
-        <span className={size === "featured" ? "min-w-0" : undefined}>
+        <span className="min-w-0 truncate text-center">
           Centro{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(centroPct)}%
           </span>
         </span>
-        <span className={size === "featured" ? "min-w-0" : undefined}>
+        <span className="min-w-0 truncate text-right">
           Der{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(derPct)}%

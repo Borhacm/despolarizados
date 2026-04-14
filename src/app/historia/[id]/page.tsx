@@ -1,6 +1,6 @@
 import { BiasMeter } from "@/components/BiasMeter";
 import { CoverageMixBar } from "@/components/CoverageMixBar";
-import { HistoriaShareBar } from "@/components/HistoriaShareBar";
+import { StoryCardShareButton } from "@/components/StoryCardShareButton";
 import { SesgoPill } from "@/components/SesgoPill";
 import { getAppBaseUrl } from "@/lib/app-base-url";
 import { coverageMixFromSesgos } from "@/lib/coverage-mix";
@@ -155,56 +155,65 @@ export default async function HistoriaPage(props: PageProps) {
 
   return (
     <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
-      <div className="mb-8 space-y-4">
-        <Link
-          href="/"
-          className="inline-flex min-h-[44px] items-center text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline sm:min-h-0 dark:text-emerald-400"
-        >
-          ← Inicio
-        </Link>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
-          Comparativa · {historia.medio_count} medios · {historia.article_count}{" "}
-          artículos
-        </p>
-        <h1 className="text-balance text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
-          {historia.titulo_canonico}
-        </h1>
-        {historia.resumen_canonico ? (
-          <p className="max-w-3xl text-pretty text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
-            {historia.resumen_canonico}
+      <div className="mb-10 space-y-5">
+        <div className="mx-auto max-w-3xl space-y-5">
+          <Link
+            href="/"
+            className="inline-flex min-h-[44px] items-center text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline sm:min-h-0 dark:text-emerald-400"
+          >
+            ← Inicio
+          </Link>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+            Comparativa · {historia.medio_count} medios · {historia.article_count}{" "}
+            artículos
           </p>
-        ) : null}
-        <div className="max-w-3xl pt-2">
-          <HistoriaShareBar
-            historiaId={id}
-            title={historia.titulo_canonico}
-            url={shareUrl}
-          />
-        </div>
-        {heroImage ? (
-          <div className="relative mt-6 max-h-[420px] overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={heroImage}
-              alt=""
-              className="max-h-[420px] w-full object-cover object-center"
-              referrerPolicy="no-referrer"
+          <h1 className="text-balance text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+            {historia.titulo_canonico}
+          </h1>
+          {historia.resumen_canonico ? (
+            <p className="text-pretty text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
+              {historia.resumen_canonico}
+            </p>
+          ) : null}
+          <div className="pt-0.5">
+            <StoryCardShareButton
+              historiaId={id}
+              title={historia.titulo_canonico}
+              shareUrl={shareUrl}
+              alignEnd={false}
+              visual={{
+                coverImageUrl: heroImage ?? null,
+                mix: coverageMix,
+                medioCount: historia.medio_count,
+                articleCount: historia.article_count,
+              }}
             />
           </div>
-        ) : null}
-        <div className="max-w-2xl space-y-6 pt-2">
-          {coverageMix ? (
-            <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                Cobertura por orientación (medios únicos)
-              </p>
-              <CoverageMixBar mix={coverageMix} />
+          {heroImage ? (
+            <div className="relative mt-2 max-h-[420px] overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={heroImage}
+                alt=""
+                className="max-h-[420px] w-full object-cover object-center"
+                referrerPolicy="no-referrer"
+              />
             </div>
           ) : null}
-          <BiasMeter
-            position={avgPos}
-            caption="Promedio orientativo del conjunto de medios (no es verificación independiente)."
-          />
+          <div className="space-y-6 border-t border-zinc-200/80 pt-6 dark:border-zinc-800/80">
+            {coverageMix ? (
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Cobertura por orientación (medios únicos)
+                </p>
+                <CoverageMixBar mix={coverageMix} />
+              </div>
+            ) : null}
+            <BiasMeter
+              position={avgPos}
+              caption="Promedio orientativo del conjunto de medios (no es verificación independiente)."
+            />
+          </div>
         </div>
       </div>
 
