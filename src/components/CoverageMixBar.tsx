@@ -31,7 +31,7 @@ export function CoverageMixBar({
 
   const trackClass =
     size === "featured"
-      ? "relative h-4 w-full overflow-hidden rounded-full bg-zinc-200 ring-1 ring-inset ring-zinc-400/35 dark:bg-zinc-800 dark:ring-zinc-500/40 sm:h-3 sm:ring-0"
+      ? "relative h-4 w-full min-w-[12rem] overflow-hidden rounded-full bg-zinc-200 ring-1 ring-inset ring-zinc-400/35 dark:bg-zinc-800 dark:ring-zinc-500/40"
       : "relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/90 dark:bg-zinc-800/90";
 
   return (
@@ -73,19 +73,19 @@ export function CoverageMixBar({
           gridTemplateColumns: `${izqPct}% ${centroPct}% ${derPct}%`,
         }}
       >
-        <span className="min-w-0 truncate text-left">
+        <span className="min-w-0 break-words text-left leading-tight">
           Izq{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(izqPct)}%
           </span>
         </span>
-        <span className="min-w-0 truncate text-center">
+        <span className="min-w-0 break-words text-center leading-tight">
           Centro{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(centroPct)}%
           </span>
         </span>
-        <span className="min-w-0 truncate text-right">
+        <span className="min-w-0 break-words text-right leading-tight">
           Der{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(derPct)}%

@@ -206,7 +206,7 @@ export function StoryCard({
           <div
             className={
               isFeatured
-                ? "w-full min-w-0 sm:max-w-[min(100%,19rem)] sm:flex-1 sm:pl-1 md:max-w-[min(100%,21rem)]"
+                ? "w-full min-w-0 basis-full pt-0.5 sm:pt-1"
                 : "min-w-0 w-full basis-full pl-0 pt-0.5 sm:flex-1 sm:basis-0 sm:pl-2 sm:pt-0"
             }
           >
