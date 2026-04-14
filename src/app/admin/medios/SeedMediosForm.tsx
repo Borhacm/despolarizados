@@ -4,6 +4,7 @@ import {
   syncSeedMediosAction,
   type SyncSeedMediosState,
 } from "@/app/admin/medios/actions";
+import { MEDIOS_SEED } from "@/data/medios-seed";
 import Link from "next/link";
 import { useActionState } from "react";
 
@@ -21,7 +22,8 @@ export function SeedMediosForm() {
         Cargar catálogo semilla en Supabase
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-        Inserta o actualiza <strong>20 medios</strong> (misma lista que el repo).
+        Inserta o actualiza <strong>{MEDIOS_SEED.length} medios</strong> (misma lista
+        que el repo).
         Úsalo si añadimos medios nuevos y no has vuelto a ejecutar el SQL en el
         panel de Supabase.
       </p>
@@ -68,7 +70,9 @@ export function SeedMediosForm() {
           disabled={isPending}
           className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
         >
-          {isPending ? "Sincronizando…" : "Sincronizar 20 medios semilla"}
+          {isPending
+            ? "Sincronizando…"
+            : `Sincronizar ${MEDIOS_SEED.length} medios semilla`}
         </button>
       </form>
     </div>

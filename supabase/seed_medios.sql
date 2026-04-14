@@ -15,7 +15,7 @@ BEGIN
   END IF;
 END $$;
 
--- Semilla: ~20 medios (RSS comprobados por HTTP 200; los agencias suelen prioridad alta).
+-- Semilla: catálogo amplio (RSS comprobados por HTTP 200; agencias suelen prioridad alta).
 -- Mantén coherencia con `src/data/medios-seed.ts` (también usado por `npm run seed:medios`).
 
 insert into public.medios (nombre, slug, rss_urls, sesgo, factualidad, ownership, prioridad, active)
@@ -39,7 +39,20 @@ values
   ('infoLibre', 'infolibre', array['https://www.infolibre.es/rss']::text[], 'izquierda', 'alta', 'infoLibre', 3, true),
   ('HuffPost', 'huffpost', array['https://www.huffingtonpost.es/feeds/index.xml']::text[], 'centro-izquierda', 'media', 'BuzzFeed Inc.', 3, true),
   ('Expansión', 'expansion', array['https://www.expansion.com/rss/portada.xml']::text[], 'centro-derecha', 'alta', 'Unidad Editorial', 4, true),
-  ('Libertad Digital', 'libertad-digital', array['https://www.libertaddigital.com/rss/portada.xml']::text[], 'derecha', 'media', 'Libertad Digital', 3, true)
+  ('Libertad Digital', 'libertad-digital', array['https://www.libertaddigital.com/rss/portada.xml']::text[], 'derecha', 'media', 'Libertad Digital', 3, true),
+  ('Cinco Días', 'cinco-dias', array['https://cincodias.elpais.com/rss/cincodias/portada.xml']::text[], 'centro-izquierda', 'alta', 'Prisa', 4, true),
+  ('El Correo', 'el-correo', array['https://www.elcorreo.com/rss/atom/portada/']::text[], 'centro', 'media-alta', 'Vocento', 3, true),
+  ('Business Insider España', 'business-insider-es', array['https://www.businessinsider.es/rss']::text[], 'centro', 'media-alta', 'Insider Inc.', 3, true),
+  ('Xataka', 'xataka', array['https://www.xataka.com/index.xml']::text[], 'centro', 'media-alta', 'Webedia', 3, true),
+  ('Genbeta', 'genbeta', array['https://www.genbeta.com/index.xml']::text[], 'centro', 'media-alta', 'Webedia', 3, true),
+  ('Ideal', 'ideal-granada', array['https://www.ideal.es/rss/atom/portada/']::text[], 'centro', 'media-alta', 'Vocento', 3, true),
+  ('Diario Sur', 'diario-sur', array['https://www.diariosur.es/rss/atom/portada/']::text[], 'centro', 'media-alta', 'Prensa Ibérica', 3, true),
+  ('El Comercio', 'el-comercio', array['https://www.elcomercio.es/rss/atom/portada/']::text[], 'centro', 'media-alta', 'Prensa Ibérica', 3, true),
+  ('El Norte de Castilla', 'el-norte-de-castilla', array['https://www.elnortedecastilla.es/rss/atom/portada/']::text[], 'centro', 'media-alta', 'Vocento', 3, true),
+  ('La Rioja', 'la-rioja', array['https://www.larioja.com/rss/atom/portada/']::text[], 'centro', 'media-alta', 'Vocento', 3, true),
+  ('La Gaceta de Salamanca', 'la-gaceta-de-salamanca', array['https://www.lagacetadesalamanca.es/rss/atom/portada/']::text[], 'centro', 'media-alta', 'Vocento', 3, true),
+  ('Moncloa', 'moncloa', array['https://www.moncloa.com/rss/']::text[], 'centro', 'media', 'Moncloa.com', 2, true),
+  ('Canarias7', 'canarias7', array['https://www.canarias7.es/rss/atom/portada/']::text[], 'centro', 'media', 'Canarias7', 3, true)
 on conflict (slug) do update set
   rss_urls = excluded.rss_urls,
   sesgo = excluded.sesgo,
