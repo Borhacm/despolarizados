@@ -336,7 +336,7 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
             href="/medios"
             className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
           >
-            Fuentes
+            Medios
           </Link>{" "}
           ·{" "}
           <Link

@@ -174,7 +174,7 @@ export function StoryCard({
           <div className="flex min-w-0 shrink-0 items-center gap-2">
             <span className="inline-flex items-center">{compareCta}</span>
             <span className="inline-flex rounded-md border border-zinc-200/90 bg-zinc-50 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200">
-              {h.medio_count} fuentes · {h.article_count} artículos
+              {h.medio_count} medios · {h.article_count} artículos
             </span>
           </div>
           {coverageMix ? (

@@ -66,11 +66,9 @@ export function StoryFilters({
       <form
         method="get"
         action={action}
-        className="grid grid-cols-1 gap-4 p-4 sm:p-5 lg:grid-cols-12 lg:items-end lg:gap-x-4 lg:gap-y-3"
+        className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:flex-wrap lg:items-end lg:gap-x-4 lg:gap-y-3"
       >
-        <div
-          className={showMedio ? "lg:col-span-4" : "lg:col-span-5"}
-        >
+        <div className="min-w-0 w-full lg:flex-[2_1_16rem]">
           <label
             htmlFor={`q-${idBase}`}
             className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400"
@@ -88,7 +86,7 @@ export function StoryFilters({
           />
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="min-w-0 w-full shrink-0 lg:w-[10.25rem]">
           <label
             htmlFor={`orientacion-${idBase}`}
             className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400"
@@ -109,7 +107,7 @@ export function StoryFilters({
         </div>
 
         {showMedio ? (
-          <div className="lg:col-span-2">
+          <div className="min-w-0 w-full shrink-0 lg:w-[11rem]">
             <label
               htmlFor={`medio-${idBase}`}
               className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400"
@@ -132,7 +130,7 @@ export function StoryFilters({
           </div>
         ) : null}
 
-        <div className="lg:col-span-2">
+        <div className="min-w-0 w-full shrink-0 lg:w-[13.5rem]">
           <label
             htmlFor={`ventana-${idBase}`}
             className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400"
@@ -152,11 +150,7 @@ export function StoryFilters({
           </select>
         </div>
 
-        <div
-          className={`flex flex-col gap-2 sm:flex-row sm:items-center ${
-            showMedio ? "lg:col-span-2" : "lg:col-span-3"
-          } lg:justify-end`}
-        >
+        <div className="flex w-full min-w-0 shrink-0 flex-col gap-2 sm:flex-row sm:items-center lg:ml-auto lg:w-auto lg:min-w-[min(100%,15rem)] lg:justify-end">
           <button
             type="submit"
             className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] dark:bg-emerald-500 dark:hover:bg-emerald-400 sm:w-auto sm:min-w-[7.5rem]"

@@ -115,7 +115,7 @@ export default async function HistoriaPage(props: PageProps) {
           ← Inicio
         </Link>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
-          Comparativa · {historia.medio_count} fuentes · {historia.article_count}{" "}
+          Comparativa · {historia.medio_count} medios · {historia.article_count}{" "}
           artículos
         </p>
         <h1 className="text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
@@ -141,7 +141,7 @@ export default async function HistoriaPage(props: PageProps) {
           {coverageMix ? (
             <div>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                Cobertura por orientación (fuentes únicas)
+                Cobertura por orientación (medios únicos)
               </p>
               <CoverageMixBar mix={coverageMix} />
             </div>
@@ -155,7 +155,7 @@ export default async function HistoriaPage(props: PageProps) {
 
       <section className="mb-12">
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-          Fuentes ordenadas en el espectro (izq. → der.)
+          Medios ordenados en el espectro (izq. → der.)
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
           <table className="w-full min-w-[720px] text-left text-sm">

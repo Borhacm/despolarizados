@@ -28,7 +28,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Para ti",
   description:
-    "Tu feed personal: inicia sesión con correo para guardar medios en tu cuenta o usa una cookie en este navegador.",
+    "Para ti: inicia sesión con correo para guardar medios en tu cuenta o usa una cookie en este navegador.",
 };
 
 const MAX_IN = 1000;
@@ -84,11 +84,8 @@ export default async function FeedPage({ searchParams }: PageProps) {
     return (
       <main className="mx-auto max-w-2xl flex-1 px-4 py-10 sm:px-6 lg:max-w-3xl">
         <header className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
+          <h1 className="text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
             Para ti
-          </p>
-          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Tu feed personal
           </h1>
           <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
             <Link
@@ -113,7 +110,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
   } catch {
     return (
       <main className="mx-auto max-w-3xl flex-1 px-4 py-16 text-center text-red-600">
-        Error al cargar el feed.
+        Error al cargar tus historias.
       </main>
     );
   }
@@ -330,11 +327,8 @@ function FeedHeader({
   return (
     <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Para ti
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Tu feed
         </h1>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
           Medios seguidos: {slugs.length ? slugs.join(", ") : "—"}

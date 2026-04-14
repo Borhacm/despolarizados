@@ -53,10 +53,10 @@ export function FeedEmailSignup() {
     <div className="space-y-10">
       <div className="rounded-2xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50/90 via-white to-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-emerald-900/40 dark:from-emerald-950/30 dark:via-zinc-950 dark:to-zinc-950 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-300/90">
-          Paso 1 · Cuenta y feed
+          Paso 1 · Cuenta y Para ti
         </p>
         <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-2xl">
-          Entra con tu correo para guardar tu feed
+          Entra con tu correo para guardar tu selección en Para ti
         </h2>
         <p className="mt-3 text-pretty text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
           Lo principal es{" "}
@@ -150,9 +150,10 @@ export function FeedEmailSignup() {
           Elige medios en el catálogo
         </h3>
         <p className="mt-2 text-pretty text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Puedes armar tu feed ya mismo sin cuenta: entra en cada medio y pulsa{" "}
+          Puedes configurar Para ti ya mismo sin cuenta: entra en cada medio y
+          pulsa{" "}
           <strong className="text-zinc-800 dark:text-zinc-200">
-            Seguir en Mi feed
+            Seguir en Para ti
           </strong>
           . La lista se guarda en una{" "}
           <strong className="text-zinc-800 dark:text-zinc-200">cookie</strong> en
