@@ -1,12 +1,14 @@
 import { HistoriaShareOptions } from "@/components/HistoriaShareOptions";
+import type { HistoriaShareVisualPayload } from "@/lib/share/historia-share-visual";
 
 type Props = {
   historiaId: string;
   title: string;
   url: string;
+  visual?: HistoriaShareVisualPayload | null;
 };
 
-export function HistoriaShareBar({ historiaId, title, url }: Props) {
+export function HistoriaShareBar({ historiaId, title, url, visual = null }: Props) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200/90 bg-zinc-50/80 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/40 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
       <div className="min-w-0 sm:max-w-[min(100%,14rem)] sm:pr-2">
@@ -24,6 +26,7 @@ export function HistoriaShareBar({ historiaId, title, url }: Props) {
           historiaId={historiaId}
           title={title}
           url={url}
+          visual={visual}
         />
       </div>
     </div>

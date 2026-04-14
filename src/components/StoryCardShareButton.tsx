@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import { HistoriaShareModal } from "@/components/HistoriaShareModal";
+import type { HistoriaShareVisualPayload } from "@/lib/share/historia-share-visual";
 
 type Props = {
   historiaId: string;
   title: string;
   shareUrl: string;
+  visual?: HistoriaShareVisualPayload | null;
 };
 
-export function StoryCardShareButton({ historiaId, title, shareUrl }: Props) {
+export function StoryCardShareButton({
+  historiaId,
+  title,
+  shareUrl,
+  visual = null,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -49,6 +56,7 @@ export function StoryCardShareButton({ historiaId, title, shareUrl }: Props) {
         historiaId={historiaId}
         title={title}
         url={shareUrl}
+        visual={visual}
       />
     </>
   );

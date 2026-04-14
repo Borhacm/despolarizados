@@ -1,10 +1,14 @@
 "use client";
 
+import { HistoriaShareOgPreview } from "@/components/share/HistoriaShareOgPreview";
+import { HistoriaShareDomExportSection } from "@/components/share/HistoriaShareDomExportSection";
 import { copyTextToClipboard } from "@/lib/copy-to-clipboard";
 import {
   historiaInstagramCaption,
   historiaShareSnippet,
 } from "@/lib/share/historia-share-copy";
+import type { HistoriaShareVisualPayload } from "@/lib/share/historia-share-visual";
+import { isMobileShareContext } from "@/lib/share/mobile-instagram-share";
 import {
   buildFacebookShareUrl,
   buildLinkedInShareUrl,
@@ -12,8 +16,8 @@ import {
   buildTwitterIntentUrl,
   buildWhatsAppShareUrl,
 } from "@/lib/share/social-share-urls";
-import { HistoriaShareOgPreview } from "@/components/share/HistoriaShareOgPreview";
-import { useCallback, useMemo, useState } from "react";
+import { sharePngBlobWithWebShareOrDownload } from "@/lib/share/web-share-png-blob";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type HistoriaShareOptionsProps = {
   historiaId: string;
@@ -22,6 +26,8 @@ export type HistoriaShareOptionsProps = {
   url: string;
   /** Barra horizontal (ficha) o rejilla amplia (modal en card). */
   variant?: "bar" | "modal";
+  /** Datos para export DOM (html-to-image); si falta, se oculta esa sección. */
+  visual?: HistoriaShareVisualPayload | null;
 };
 
 function assetOrigin(canonicalUrl: string): string {
@@ -38,6 +44,7 @@ export function HistoriaShareOptions({
   title,
   url,
   variant = "bar",
+  visual = null,
 }: HistoriaShareOptionsProps) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showIgManual, setShowIgManual] = useState(false);
@@ -45,10 +52,23 @@ export function HistoriaShareOptions({
   const [storyBusy, setStoryBusy] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mobileUi, setMobileUi] = useState(false);
+
+  useEffect(() => {
+    setMobileUi(isMobileShareContext());
+  }, []);
 
   const snippet = historiaShareSnippet(title);
   const igCaption = historiaInstagramCaption(title, url);
   const base = useMemo(() => assetOrigin(url), [url]);
+
+  const hostLabel = useMemo(() => {
+    try {
+      return new URL(url).host;
+    } catch {
+      return "";
+    }
+  }, [url]);
 
   const ogImageSrc = `${base}/historia/${historiaId}/opengraph-image`;
   const storyImagePath = `${base}/historia/${historiaId}/story-image`;
@@ -69,20 +89,24 @@ export function HistoriaShareOptions({
     window.setTimeout(() => setFeedback(null), 2800);
   }, []);
 
+  const copyUrlToClipboardAsync = useCallback(async (): Promise<boolean> => {
+    if (copyTextToClipboard(url)) return true;
+    try {
+      await navigator.clipboard.writeText(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [url]);
+
   const onCopyUrl = useCallback(() => {
     setShowIgManual(false);
     setError(null);
-    if (copyTextToClipboard(url)) {
-      flash("Enlace copiado al portapapeles.");
-    } else if (navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(url).then(
-        () => flash("Enlace copiado al portapapeles."),
-        () => window.prompt("Copia el enlace:", url),
-      );
-    } else {
-      window.prompt("Copia el enlace:", url);
-    }
-  }, [flash, url]);
+    void copyUrlToClipboardAsync().then((ok) => {
+      if (ok) flash("Enlace copiado al portapapeles.");
+      else window.prompt("Copia el enlace:", url);
+    });
+  }, [copyUrlToClipboardAsync, flash, url]);
 
   const onCopyInstagramCaption = useCallback(() => {
     setShowIgManual(false);
@@ -106,105 +130,94 @@ export function HistoriaShareOptions({
     fallback();
   }, [flash, igCaption]);
 
-  const fetchPng = useCallback(
-    async (path: string) => {
-      const res = await fetch(path, { cache: "no-store" });
-      if (!res.ok) throw new Error("No se pudo generar la imagen.");
-      return res.blob();
-    },
-    [],
-  );
+  const fetchPng = useCallback(async (path: string) => {
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error("No se pudo generar la imagen.");
+    return res.blob();
+  }, []);
 
-  const shareOrDownloadBlob = useCallback(
-    async (
-      blob: Blob,
-      fileName: string,
-      shareTitle: string,
-      shareText: string,
-      shareUrl: string,
-    ) => {
-      const file = new File([blob], fileName, { type: "image/png" });
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.canShare?.({ files: [file] })
-      ) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: shareTitle,
-            text: shareText,
-            url: shareUrl,
-          });
-          return;
-        } catch (e) {
-          const err = e as { name?: string };
-          if (err?.name === "AbortError") return;
-        }
-      }
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = fileName;
-      a.rel = "noopener";
-      a.click();
-      URL.revokeObjectURL(href);
-    },
-    [],
-  );
-
-  /** Vista previa Open Graph (1.91:1): mismas imágenes que ven los crawlers al compartir URL. */
   const onShareOgPng = useCallback(async () => {
     setOgBusy(true);
     setError(null);
     try {
       const blob = await fetchPng(ogImageSrc);
       const name = `despolarizados-og-${historiaId.slice(0, 8)}.png`;
-      await shareOrDownloadBlob(blob, name, title, snippet, url);
+      const result = await sharePngBlobWithWebShareOrDownload({
+        blob,
+        fileName: name,
+        title,
+        caption: snippet,
+        url,
+        copyUrlToClipboard: copyUrlToClipboardAsync,
+      });
+      if (result === "shared") {
+        flash("Listo: elige la app en el menú de compartir si hace falta.");
+      } else if (result === "downloaded") {
+        flash("PNG descargado.");
+      }
     } catch {
       setError("No se pudo obtener la imagen de vista previa.");
     } finally {
       setOgBusy(false);
     }
-  }, [fetchPng, historiaId, ogImageSrc, shareOrDownloadBlob, snippet, title, url]);
+  }, [
+    copyUrlToClipboardAsync,
+    fetchPng,
+    flash,
+    historiaId,
+    ogImageSrc,
+    snippet,
+    title,
+    url,
+  ]);
 
-  /** Stories 9:16: copia el enlace y comparte o descarga el PNG. */
   const onStoryImage = useCallback(async () => {
     setStoryBusy(true);
     setError(null);
     try {
-      if (copyTextToClipboard(url)) {
-        flash("Enlace copiado. Pégalo en la leyenda al publicar la historia.");
-      } else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        flash("Enlace copiado. Pégalo en la leyenda al publicar la historia.");
-      }
-
       const blob = await fetchPng(storyImagePath);
       const name = `despolarizados-stories-${historiaId.slice(0, 8)}.png`;
-      await shareOrDownloadBlob(
+      const caption = historiaInstagramCaption(title, url);
+      const result = await sharePngBlobWithWebShareOrDownload({
         blob,
-        name,
+        fileName: name,
         title,
-        historiaInstagramCaption(title, url),
+        caption,
         url,
-      );
+        copyUrlToClipboard: copyUrlToClipboardAsync,
+      });
+      if (result === "shared") {
+        flash(
+          mobileUi
+            ? "Enlace copiado. En el menú, elige Instagram (Historia o feed) si aparece."
+            : "Enlace copiado. Elige la app en el menú de compartir.",
+        );
+      } else if (result === "downloaded") {
+        flash(
+          "PNG descargado. El enlace debería estar en el portapapeles.",
+        );
+      }
     } catch {
       setError("No se pudo preparar la imagen para Stories.");
     } finally {
       setStoryBusy(false);
     }
   }, [
+    copyUrlToClipboardAsync,
     fetchPng,
     flash,
     historiaId,
-    shareOrDownloadBlob,
+    mobileUi,
     storyImagePath,
     title,
     url,
   ]);
 
   const onNativeShare = useCallback(async () => {
-    if (typeof navigator === "undefined" || typeof navigator.share !== "function") {
+    if (
+      typeof navigator === "undefined" ||
+      typeof navigator.share !== "function"
+    ) {
       onCopyUrl();
       return;
     }
@@ -252,6 +265,10 @@ export function HistoriaShareOptions({
     variant === "modal"
       ? "grid grid-cols-1 gap-2 sm:grid-cols-2"
       : "flex flex-wrap items-center justify-end gap-2";
+
+  const storyButtonLabel = mobileUi
+    ? "Imagen Stories / Instagram"
+    : "Imagen Stories (9:16)";
 
   return (
     <div className="space-y-3">
@@ -329,7 +346,12 @@ export function HistoriaShareOptions({
         <p className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
           La app no abre enlaces con texto prellenado como otras redes: aquí el
           flujo es leyenda (texto) o Stories (imagen 9:16); el enlace va en la
-          leyenda o en bio.
+          leyenda o en bio. En{" "}
+          <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+            móvil
+          </span>
+          , al compartir la imagen se abre el menú del sistema: suele aparecer
+          Instagram.
         </p>
         <div className={igWrapClass}>
           <button
@@ -345,9 +367,9 @@ export function HistoriaShareOptions({
             onClick={() => void onStoryImage()}
             disabled={storyBusy}
             className={igMutedClass}
-            title="Genera PNG vertical, copia el enlace y abre el menú para compartir la imagen o la guarda."
+            title="PNG vertical del servidor: copia el enlace y abre el menú para compartir la imagen (en móvil, Instagram)."
           >
-            {storyBusy ? "Generando…" : "Imagen Stories (9:16)"}
+            {storyBusy ? "Generando…" : storyButtonLabel}
           </button>
         </div>
       </div>
@@ -363,6 +385,19 @@ export function HistoriaShareOptions({
           {ogBusy ? "Generando…" : "Imagen vista previa (1.91:1)"}
         </button>
       </div>
+
+      {visual ? (
+        <HistoriaShareDomExportSection
+          historiaId={historiaId}
+          title={title}
+          url={url}
+          hostLabel={hostLabel}
+          visual={visual}
+          variant={variant}
+          onFeedback={flash}
+          onError={setError}
+        />
+      ) : null}
     </div>
   );
 }
