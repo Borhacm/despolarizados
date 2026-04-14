@@ -7,11 +7,15 @@ import { fetchCoverageMixByHistoriaIds } from "@/lib/coverage-mix";
 import { fetchCoverImagesByHistoriaIds } from "@/lib/historia-covers";
 import { buildHistoriasSelect } from "@/lib/historias-query-build";
 import { historiaIdsForMedioSlugs } from "@/lib/historias-repo";
-import { parseListOrden } from "@/lib/list-orden";
+import {
+  fetchHistoriaIdsForOrientacion,
+  intersectHistoriaIds,
+  parseOrientacionFiltro,
+} from "@/lib/orientacion-filter";
 import { HISTORIAS_PAGE_SIZE } from "@/lib/historias-page-size";
 import type { HistoriaRow } from "@/lib/types";
 import { sanitizeSearchInput } from "@/lib/search-sanitize";
-import { trendingKeywordsFromTitles } from "@/lib/trending-keywords";
+import { trendingTermsFromTitles } from "@/lib/trending-keywords";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
@@ -42,8 +46,9 @@ export default async function FeedPage({ searchParams }: PageProps) {
     Math.min(200, Number.isFinite(pageRaw) ? pageRaw : 1),
   );
   const q = sanitizeSearchInput(qRaw);
-  const ordenRaw = typeof sp.orden === "string" ? sp.orden : "";
-  const orden = parseListOrden(ordenRaw);
+  const orientacionRaw =
+    typeof sp.orientacion === "string" ? sp.orientacion.trim() : "";
+  const orientacion = parseOrientacionFiltro(orientacionRaw);
 
   const supabase = createPublicClient();
   const jar = await cookies();
@@ -121,11 +126,45 @@ export default async function FeedPage({ searchParams }: PageProps) {
     );
   }
 
+  let historiaIdsFiltered = historiaIds;
+  if (orientacion) {
+    const orientIds = await fetchHistoriaIdsForOrientacion(
+      supabase,
+      orientacion,
+      MAX_IN,
+    );
+    historiaIdsFiltered = intersectHistoriaIds(historiaIds, orientIds);
+  }
+
+  if (historiaIdsFiltered.length === 0) {
+    return (
+      <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6">
+        <FeedHeader slugs={feedSlugs} />
+        <p className="mt-6 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40">
+          Ninguna historia de tus medios seguidos tiene cobertura con esa orientación.
+          Prueba <strong>Todas</strong> u otra opción en el filtro.
+        </p>
+        <div className="mt-8">
+          <StoryFilters
+            q={qRaw}
+            medio=""
+            ventana={ventana}
+            orientacion={orientacion}
+            medios={mediosOpts ?? []}
+            action="/feed"
+            showMedio={false}
+            clearHref="/feed"
+          />
+        </div>
+      </main>
+    );
+  }
+
   const from = (page - 1) * HISTORIAS_PAGE_SIZE;
   const to = from + HISTORIAS_PAGE_SIZE - 1;
 
   const filterBase = {
-    idsIn: historiaIds,
+    idsIn: historiaIdsFiltered,
     ventana,
     searchTerm: q,
   };
@@ -135,10 +174,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
     searchMode: "fts",
   });
 
-  let ordered =
-    orden === "reciente"
-      ? listQuery.order("ultima_pub", { ascending: false, nullsFirst: false })
-      : listQuery.order("importancia", { ascending: false });
+  let ordered = listQuery.order("importancia", { ascending: false });
 
   let { data: historias, error } = await ordered.range(from, to);
 
@@ -147,10 +183,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
       ...filterBase,
       searchMode: "ilike",
     });
-    ordered =
-      orden === "reciente"
-        ? listQuery.order("ultima_pub", { ascending: false, nullsFirst: false })
-        : listQuery.order("importancia", { ascending: false });
+    ordered = listQuery.order("importancia", { ascending: false });
     ({ data: historias, error } = await ordered.range(from, to));
   }
 
@@ -172,23 +205,27 @@ export default async function FeedPage({ searchParams }: PageProps) {
       .from("historias")
       .select("titulo_canonico")
       .order("importancia", { ascending: false })
-      .limit(80),
+      .limit(120),
     fetchCoverImagesByHistoriaIds(supabase, ids),
     fetchCoverageMixByHistoriaIds(supabase, ids),
   ]);
 
-  const trending = trendingKeywordsFromTitles(
+  const trending = trendingTermsFromTitles(
     (trendTitulos ?? []).map((r) => r.titulo_canonico as string),
-    10,
+    12,
   );
 
   const paginationQuery: Record<string, string> = {};
   if (qRaw.trim()) paginationQuery.q = qRaw;
   if (ventana && ventana !== "all") paginationQuery.ventana = ventana;
-  if (orden === "reciente") paginationQuery.orden = "reciente";
+  if (orientacion) paginationQuery.orientacion = orientacion;
 
   const showFeaturedBlock =
-    page === 1 && !q.trim() && ventana === "all" && rows.length > 0;
+    page === 1 &&
+    !q.trim() &&
+    ventana === "all" &&
+    !orientacion &&
+    rows.length > 0;
   const [featured, rest] =
     showFeaturedBlock && rows.length > 0
       ? [rows[0], rows.slice(1)]
@@ -207,7 +244,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
           q={qRaw}
           medio=""
           ventana={ventana}
-          orden={orden}
+          orientacion={orientacion}
           medios={mediosOpts ?? []}
           action="/feed"
           showMedio={false}

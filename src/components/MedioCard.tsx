@@ -11,7 +11,6 @@ type Medio = {
   sesgo: string;
   factualidad: string;
   ownership: string | null;
-  prioridad: number;
 };
 
 export function MedioCard({ m }: { m: Medio }) {
@@ -26,23 +25,18 @@ export function MedioCard({ m }: { m: Medio }) {
         ? "from-sky-400/90 to-sky-600/80"
         : "from-teal-400/90 to-emerald-600/80";
 
-  const feeds = m.rss_urls?.length ?? 0;
-
   const cardHover = esCentro
     ? "hover:border-zinc-300/90 hover:shadow-md dark:hover:border-zinc-600/50"
     : "hover:border-emerald-200/90 hover:shadow-md dark:hover:border-emerald-800/45";
 
-  const titleLinkHover = esCentro
-    ? "hover:text-zinc-800 dark:hover:text-zinc-200"
-    : "hover:text-emerald-800 dark:hover:text-emerald-300";
-
-  const ctaClass = esCentro
-    ? "text-sm font-semibold text-zinc-600 transition group-hover:gap-1 dark:text-zinc-400"
-    : "text-sm font-semibold text-emerald-700 transition group-hover:gap-1 dark:text-emerald-300";
+  const titleGroupHover = esCentro
+    ? "group-hover:text-zinc-800 dark:group-hover:text-zinc-200"
+    : "group-hover:text-emerald-800 dark:group-hover:text-emerald-300";
 
   return (
-    <article
-      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm transition dark:border-zinc-800 dark:bg-zinc-950/50 ${cardHover}`}
+    <Link
+      href={`/medios/${m.slug}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm no-underline outline-none transition focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-950/50 dark:focus-visible:ring-emerald-400/60 dark:focus-visible:ring-offset-zinc-950 ${cardHover}`}
     >
       <div
         className={`h-1.5 w-full bg-gradient-to-r ${hue}`}
@@ -57,22 +51,11 @@ export function MedioCard({ m }: { m: Medio }) {
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="text-lg font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
-                <Link
-                  href={`/medios/${m.slug}`}
-                  className={titleLinkHover}
-                >
-                  {m.nombre}
-                </Link>
-              </h2>
-              <span
-                className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                title="Prioridad de ingesta (1–5)"
-              >
-                P{m.prioridad}
-              </span>
-            </div>
+            <h2
+              className={`text-lg font-semibold leading-snug text-zinc-900 transition dark:text-zinc-50 ${titleGroupHover}`}
+            >
+              {m.nombre}
+            </h2>
             <p className="mt-1 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">
               {m.ownership ?? "Propiedad no indicada"}
             </p>
@@ -88,22 +71,10 @@ export function MedioCard({ m }: { m: Medio }) {
           </span>
         </div>
 
-        <div className="mb-4">
+        <div className="mt-auto mb-4">
           <BiasMeter position={pos} sesgo={m.sesgo} />
         </div>
-
-        <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 dark:border-zinc-800/80">
-          <span className="text-xs text-zinc-500">
-            {feeds} feed{feeds === 1 ? "" : "s"} RSS
-          </span>
-          <Link
-            href={`/medios/${m.slug}`}
-            className={ctaClass}
-          >
-            Ver ficha →
-          </Link>
-        </div>
       </div>
-    </article>
+    </Link>
   );
 }

@@ -123,38 +123,9 @@ export default async function MedioDetailPage(props: PageProps) {
         </div>
       </div>
 
-      <div className="mt-8 space-y-4">
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Feeds RSS
-          </h2>
-          <ul className="space-y-2 text-sm">
-            {(medio.rss_urls as string[] | null)?.map((u) => (
-              <li
-                key={u}
-                className="rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/40"
-              >
-                <a
-                  href={u}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={
-                    esCentro
-                      ? "break-all font-mono text-[13px] text-zinc-700 underline-offset-2 hover:underline dark:text-zinc-300"
-                      : "break-all font-mono text-[13px] text-emerald-800 hover:underline dark:text-emerald-200"
-                  }
-                >
-                  {u}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
       <section className="mt-10">
         <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Últimas piezas ingestadas
+          Últimas piezas analizadas
         </h2>
         <ul className="space-y-3">
           {(reciente ?? []).map((a) => (

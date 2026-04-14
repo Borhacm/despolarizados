@@ -7,13 +7,17 @@ import { HISTORIAS_PAGE_SIZE } from "@/lib/historias-page-size";
 import { fetchCoverageMixByHistoriaIds } from "@/lib/coverage-mix";
 import { fetchCoverImagesByHistoriaIds } from "@/lib/historia-covers";
 import { buildHistoriasSelect } from "@/lib/historias-query-build";
-import { parseListOrden } from "@/lib/list-orden";
+import {
+  fetchHistoriaIdsForOrientacion,
+  intersectHistoriaIds,
+  parseOrientacionFiltro,
+} from "@/lib/orientacion-filter";
 import { sanitizeSearchInput } from "@/lib/search-sanitize";
 import type { HistoriaRow } from "@/lib/types";
 import { createPublicClient } from "@/lib/supabase/public";
 import { HistoriasEmptyState } from "@/components/HistoriasEmptyState";
 import { TrendingChips } from "@/components/TrendingChips";
-import { trendingKeywordsFromTitles } from "@/lib/trending-keywords";
+import { trendingTermsFromTitles } from "@/lib/trending-keywords";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -22,7 +26,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Inicio",
   description:
-    "Historias agrupadas como en Ground News: compara titulares y cobertura izquierda, centro y derecha en España.",
+    "Historias desde varios medios: contexto y cobertura para leer con más perspectiva.",
 };
 
 const MAX_IN = 1000;
@@ -46,8 +50,9 @@ export default async function Home({ searchParams }: PageProps) {
   );
 
   const q = sanitizeSearchInput(qRaw);
-  const ordenRaw = typeof sp.orden === "string" ? sp.orden : "";
-  const orden = parseListOrden(ordenRaw);
+  const orientacionRaw =
+    typeof sp.orientacion === "string" ? sp.orientacion.trim() : "";
+  const orientacion = parseOrientacionFiltro(orientacionRaw);
 
   if (!supabase) {
     return (
@@ -118,7 +123,7 @@ export default async function Home({ searchParams }: PageProps) {
           q={qRaw}
           medio={medioSlug}
           ventana={ventana}
-          orden={orden}
+          orientacion={orientacion}
           medios={mediosOpts ?? []}
         />
         <p className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
@@ -128,11 +133,46 @@ export default async function Home({ searchParams }: PageProps) {
     );
   }
 
+  let historiaIdsIn: string[] | undefined;
+  if (orientacion) {
+    const orientIds = await fetchHistoriaIdsForOrientacion(
+      supabase,
+      orientacion,
+      MAX_IN,
+    );
+    if (historiaIdsMedio !== null) {
+      historiaIdsIn = intersectHistoriaIds(historiaIdsMedio, orientIds);
+    } else {
+      historiaIdsIn = orientIds.length > 0 ? orientIds : [];
+    }
+  } else {
+    historiaIdsIn = historiaIdsMedio ?? undefined;
+  }
+
+  if (historiaIdsIn !== undefined && historiaIdsIn.length === 0) {
+    return (
+      <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6">
+        <HomeHeader stats={stats} />
+        <StoryFilters
+          q={qRaw}
+          medio={medioSlug}
+          ventana={ventana}
+          orientacion={orientacion}
+          medios={mediosOpts ?? []}
+        />
+        <p className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
+          No hay historias con cobertura de esa orientación (con los filtros
+          actuales).
+        </p>
+      </main>
+    );
+  }
+
   const from = (page - 1) * HISTORIAS_PAGE_SIZE;
   const to = from + HISTORIAS_PAGE_SIZE - 1;
 
   const filterBase = {
-    idsIn: historiaIdsMedio ?? undefined,
+    idsIn: historiaIdsIn,
     ventana,
     searchTerm: q,
   };
@@ -142,10 +182,7 @@ export default async function Home({ searchParams }: PageProps) {
     searchMode: "fts",
   });
 
-  let ordered =
-    orden === "reciente"
-      ? listQuery.order("ultima_pub", { ascending: false, nullsFirst: false })
-      : listQuery.order("importancia", { ascending: false });
+  let ordered = listQuery.order("importancia", { ascending: false });
 
   let { data: historias, error } = await ordered.range(from, to);
 
@@ -154,10 +191,7 @@ export default async function Home({ searchParams }: PageProps) {
       ...filterBase,
       searchMode: "ilike",
     });
-    ordered =
-      orden === "reciente"
-        ? listQuery.order("ultima_pub", { ascending: false, nullsFirst: false })
-        : listQuery.order("importancia", { ascending: false });
+    ordered = listQuery.order("importancia", { ascending: false });
     ({ data: historias, error } = await ordered.range(from, to));
   }
 
@@ -186,27 +220,28 @@ export default async function Home({ searchParams }: PageProps) {
       .from("historias")
       .select("titulo_canonico")
       .order("importancia", { ascending: false })
-      .limit(80),
+      .limit(120),
     fetchCoverImagesByHistoriaIds(supabase, ids),
     fetchCoverageMixByHistoriaIds(supabase, ids),
   ]);
 
-  const trending = trendingKeywordsFromTitles(
+  const trending = trendingTermsFromTitles(
     (trendTitulos ?? []).map((r) => r.titulo_canonico as string),
-    10,
+    12,
   );
 
   const paginationQuery: Record<string, string> = {};
   if (qRaw.trim()) paginationQuery.q = qRaw;
   if (medioSlug) paginationQuery.medio = medioSlug;
   if (ventana && ventana !== "all") paginationQuery.ventana = ventana;
-  if (orden === "reciente") paginationQuery.orden = "reciente";
+  if (orientacion) paginationQuery.orientacion = orientacion;
 
   const showFeaturedBlock =
     page === 1 &&
     !q.trim() &&
     !medioSlug &&
     ventana === "all" &&
+    !orientacion &&
     rows.length > 0;
 
   const [featured, rest] =
@@ -228,7 +263,7 @@ export default async function Home({ searchParams }: PageProps) {
           q={qRaw}
           medio={medioSlug}
           ventana={ventana}
-          orden={orden}
+          orientacion={orientacion}
           medios={mediosOpts ?? []}
         />
       </div>
@@ -321,16 +356,6 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
       </div>
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end">
         <StatsStrip stats={stats} />
-        <div className="max-w-xs rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 px-4 py-3 text-xs leading-relaxed text-zinc-600 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
-          Ingesta sin OpenAI: modo <code className="font-mono">lexical</code> por
-          defecto.{" "}
-          <Link
-            href="/admin/ingesta"
-            className="font-medium text-emerald-700 underline decoration-emerald-300/70 underline-offset-2 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
-          >
-            Admin
-          </Link>
-        </div>
       </div>
     </div>
   );

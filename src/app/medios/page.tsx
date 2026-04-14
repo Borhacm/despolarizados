@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Medios",
-  description: "Catálogo de medios, sesgo orientativo y feeds RSS.",
+  description: "Catálogo de medios y sesgo orientativo.",
 };
 
 export default async function MediosPage() {
@@ -56,8 +56,8 @@ export default async function MediosPage() {
             Medios
           </h1>
           <p className="mt-2 max-w-2xl text-zinc-600 dark:text-zinc-400">
-            Cada tarjeta resume sesgo, factualidad (orientativos) y enlaces RSS
-            para la ingesta. Pulsa en un medio para ver el detalle y seguirlo en{" "}
+            Cada tarjeta resume sesgo y factualidad (orientativos). Pulsa en un
+            medio para ver el detalle y seguirlo en{" "}
             <Link
               href="/feed"
               className="font-semibold text-emerald-700 underline decoration-emerald-300/70 underline-offset-2 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
@@ -94,7 +94,6 @@ export default async function MediosPage() {
                   sesgo: m.sesgo,
                   factualidad: m.factualidad,
                   ownership: m.ownership,
-                  prioridad: m.prioridad,
                 }}
               />
             </li>

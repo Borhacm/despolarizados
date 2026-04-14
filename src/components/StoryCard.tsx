@@ -136,29 +136,17 @@ export function StoryCard({
     </span>
   );
 
-  /** Con foto (split o stack): CTA bajo la imagen; sin foto en stack: al final del cuerpo. */
-  const ctaBelowMedia = isSplit || Boolean(coverUrl);
-
   const inner = (
     <>
       {isSplit ? (
         <div className={splitLeftColClass}>
           {mediaBlock}
-          {compareCta}
         </div>
       ) : (
-        <>
-          {mediaBlock}
-          {coverUrl ? (
-            <div className="px-5 pt-2">{compareCta}</div>
-          ) : null}
-        </>
+        <>{mediaBlock}</>
       )}
       <div className={isSplit ? bodySplit : bodyStack}>
         <div className="flex min-h-[1.25rem] flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-          <span className="rounded-md border border-zinc-200/90 bg-zinc-50 px-2.5 py-0.5 font-semibold tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200">
-            {h.medio_count} fuentes · {h.article_count} artículos
-          </span>
           {h.ultima_pub ? (
             <time dateTime={h.ultima_pub}>{formatWhen(h.ultima_pub)}</time>
           ) : (
@@ -182,17 +170,29 @@ export function StoryCard({
         <p className={summaryClass}>
           {h.resumen_canonico?.trim() ? h.resumen_canonico : "\u00A0"}
         </p>
-        {coverageMix ? (
-          <CoverageMixBar
-            mix={coverageMix}
-            size="compact"
-            footnote="short"
-            className="pt-0.5"
-          />
-        ) : (
-          <div className="h-[3.25rem] shrink-0" aria-hidden />
-        )}
-        {!ctaBelowMedia ? compareCta : null}
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2">
+          <div className="flex min-w-0 shrink-0 items-center gap-2">
+            <span className="inline-flex items-center">{compareCta}</span>
+            <span className="inline-flex rounded-md border border-zinc-200/90 bg-zinc-50 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200">
+              {h.medio_count} fuentes · {h.article_count} artículos
+            </span>
+          </div>
+          {coverageMix ? (
+            <div
+              className={
+                isFeatured
+                  ? "min-w-0 flex-1 pl-1 sm:pl-2 max-w-[min(100%,15rem)] sm:max-w-[min(100%,17rem)] md:max-w-[min(100%,19rem)]"
+                  : "min-w-0 flex-1 basis-0 pl-1 sm:pl-2"
+              }
+            >
+              <CoverageMixBar
+                mix={coverageMix}
+                size="compact"
+                className="min-w-0 w-full"
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
     </>
   );

@@ -10,77 +10,25 @@ export type CoverageMix = {
   derPct: number;
 };
 
-/** Cada medio izq/der suma 25% de ancho creciendo desde el eje (50%) hacia ese lado. */
-const VISUAL_STEP_PCT = 25;
-const VISUAL_AXIS_PCT = 50;
-/** Franja de centro: crece con más medios de centro (simétrica en el 50%), máx. 40%. */
-function centerBandWidthPct(centro: number): number {
-  if (centro <= 0) return 0;
-  return Math.min(40, 15 + centro * 5);
-}
-
 export type VisualSegment = { left: number; width: number };
 
 /**
- * Geometría de la barra: todo se rellena **desde el centro (50%)** hacia fuera.
- * - Izquierda: hacia la izquierda desde el eje (o desde el borde izq. de la franja gris).
- * - Derecha: hacia la derecha desde el eje (o desde el borde der. de la franja gris).
- * - Centro: franja gris centrada en el 50%; más medios de centro ensanchan la franja.
+ * Barra apilada izq → centro → der: cada tramo coincide con los % sobre el total de noticias.
  */
-export function visualCoverageLayout(mix: CoverageMix): {
+export function visualCoverageStacked(mix: CoverageMix): {
   left: VisualSegment | null;
   center: VisualSegment | null;
   right: VisualSegment | null;
-  labelLeft: number;
-  labelCenter: number;
-  labelRight: number;
-  hasCenterBand: boolean;
 } {
-  const { izq, centro, der } = mix;
-  const axis = VISUAL_AXIS_PCT;
-  const centerW = centerBandWidthPct(centro);
-  const hasCenterBand = centerW > 0;
-  const leftEdge = axis - centerW / 2;
-  const rightEdge = axis + centerW / 2;
-
-  const leftW = hasCenterBand
-    ? Math.min(leftEdge, izq * VISUAL_STEP_PCT)
-    : Math.min(axis, izq * VISUAL_STEP_PCT);
-  const rightW = hasCenterBand
-    ? Math.min(100 - rightEdge, der * VISUAL_STEP_PCT)
-    : Math.min(axis, der * VISUAL_STEP_PCT);
-
+  const { izqPct, centroPct, derPct } = mix;
   const leftSeg: VisualSegment | null =
-    leftW > 0
-      ? {
-          left: hasCenterBand ? leftEdge - leftW : axis - leftW,
-          width: leftW,
-        }
-      : null;
-
-  const centerSeg: VisualSegment | null = hasCenterBand
-    ? { left: leftEdge, width: centerW }
-    : null;
-
+    izqPct > 0 ? { left: 0, width: izqPct } : null;
+  const centerSeg: VisualSegment | null =
+    centroPct > 0 ? { left: izqPct, width: centroPct } : null;
   const rightSeg: VisualSegment | null =
-    rightW > 0 ? { left: rightEdge, width: rightW } : null;
-
-  return {
-    left: leftSeg,
-    center: centerSeg,
-    right: rightSeg,
-    labelLeft: leftW,
-    labelCenter: centerW,
-    labelRight: rightW,
-    hasCenterBand,
-  };
+    derPct > 0 ? { left: izqPct + centroPct, width: derPct } : null;
+  return { left: leftSeg, center: centerSeg, right: rightSeg };
 }
-
-export const visualCoverageConstants = {
-  stepPct: VISUAL_STEP_PCT,
-  axisPct: VISUAL_AXIS_PCT,
-  centerBandMinPct: 20,
-} as const;
 
 /** Reparte 100 puntos entre tres conteos enteros (método del mayor resto). */
 function countsToPercentages(
@@ -91,7 +39,7 @@ function countsToPercentages(
   const t = izq + centro + der;
   const raw = [(izq / t) * 100, (centro / t) * 100, (der / t) * 100];
   const floors = raw.map((x) => Math.floor(x));
-  let rem = 100 - floors[0] - floors[1] - floors[2];
+  const rem = 100 - floors[0] - floors[1] - floors[2];
   const order = [0, 1, 2].sort(
     (a, b) =>
       raw[b] - Math.floor(raw[b]) - (raw[a] - Math.floor(raw[a])),
@@ -106,7 +54,7 @@ function countsToPercentages(
   };
 }
 
-/** Una etiqueta por medio (deduplicado por `sesgo`). */
+/** Cuenta una entrada por noticia: `sesgos` puede repetir el mismo medio varias veces. */
 export function coverageMixFromSesgos(sesgos: string[]): CoverageMix | null {
   let izq = 0;
   let centro = 0;
@@ -124,7 +72,8 @@ export function coverageMixFromSesgos(sesgos: string[]): CoverageMix | null {
 }
 
 /**
- * Cobertura por sesgo (izq/centro/der) por historia, contando cada medio una vez.
+ * Cobertura por sesgo (izq/centro/der) por historia: 100% = total de noticias
+ * con medio clasificable; cada noticia cuenta según el sesgo de su medio.
  */
 export async function fetchCoverageMixByHistoriaIds(
   supabase: SupabaseClient,
@@ -140,21 +89,19 @@ export async function fetchCoverageMixByHistoriaIds(
 
   if (error || !arts?.length) return out;
 
-  const byHistoria = new Map<string, Set<string>>();
+  const byHistoria = new Map<string, string[]>();
   const allMedioIds = new Set<string>();
   for (const row of arts) {
     const hid = row.historia_id as string | null;
     const mid = row.medio_id as string | null;
     if (!hid || !mid) continue;
-    let set = byHistoria.get(hid);
-    if (!set) {
-      set = new Set();
-      byHistoria.set(hid, set);
+    let list = byHistoria.get(hid);
+    if (!list) {
+      list = [];
+      byHistoria.set(hid, list);
     }
-    if (!set.has(mid)) {
-      set.add(mid);
-      allMedioIds.add(mid);
-    }
+    list.push(mid);
+    allMedioIds.add(mid);
   }
 
   if (allMedioIds.size === 0) return out;
@@ -172,7 +119,7 @@ export async function fetchCoverageMixByHistoriaIds(
 
   for (const hid of historiaIds) {
     const mids = byHistoria.get(hid);
-    if (!mids?.size) continue;
+    if (!mids?.length) continue;
     const sesgos: string[] = [];
     for (const mid of mids) {
       const s = sesgoByMedio.get(mid);

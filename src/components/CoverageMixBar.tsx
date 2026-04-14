@@ -1,6 +1,5 @@
 import {
-  visualCoverageConstants,
-  visualCoverageLayout,
+  visualCoverageStacked,
   type CoverageMix,
 } from "@/lib/coverage-mix";
 
@@ -8,42 +7,25 @@ export function CoverageMixBar({
   mix,
   className = "",
   size = "default",
-  footnote = true,
 }: {
   mix: CoverageMix;
   className?: string;
+  /** `compact`: listados; el ancho lo define el contenedor (`w-full`). */
   size?: "default" | "compact";
-  /**
-   * Transparencia tipo Ground News (qué mide la barra).
-   * `short`: una línea en listados; `true`: texto completo en fichas.
-   */
-  footnote?: boolean | "short";
 }) {
   const { izqPct, centroPct, derPct, izq, centro, der } = mix;
   const n = izq + centro + der;
-  const viz = visualCoverageLayout(mix);
+  const viz = visualCoverageStacked(mix);
   const text =
     size === "compact"
       ? "text-[10px] leading-tight"
       : "text-[11px] leading-tight";
-  const footText =
-    size === "compact"
-      ? "text-[10px] leading-snug text-zinc-500 dark:text-zinc-500"
-      : "text-[11px] leading-snug text-zinc-500 dark:text-zinc-400";
-
-  const showFoot =
-    footnote === true || footnote === "short";
-  const shortFoot = footnote === "short";
 
   const round = (x: number) => Math.round(x);
 
-  const titleBar = `Visual (desde el centro): izq ${round(viz.labelLeft)}% · centro ${round(viz.labelCenter)}% · der ${round(viz.labelRight)}% (${n} medio(s)). Recuento: ${izqPct}% / ${centroPct}% / ${derPct}%`;
+  const titleBar = `Cobertura (${n} ${n === 1 ? "noticia" : "noticias"}): ${round(izqPct)}% izquierda, ${round(centroPct)}% centro, ${round(derPct)}% derecha`;
 
-  /** En listados, ancho fijo para que el mismo % tenga siempre la misma longitud en px. */
-  const listWrap =
-    size === "compact"
-      ? "mx-auto w-[288px] max-w-full"
-      : "w-full";
+  const listWrap = "w-full min-w-0";
 
   return (
     <div className={`space-y-1 ${listWrap} ${className}`}>
@@ -78,69 +60,29 @@ export function CoverageMixBar({
             }}
           />
         ) : null}
-        {!viz.hasCenterBand ? (
-          <div
-            className="pointer-events-none absolute inset-y-0 z-[4] w-px -translate-x-1/2 bg-zinc-600/35 dark:bg-zinc-300/40"
-            style={{ left: `${visualCoverageConstants.axisPct}%` }}
-            aria-hidden
-          />
-        ) : null}
       </div>
       <div
-        className={`flex flex-wrap justify-between gap-x-2 gap-y-0.5 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 ${text}`}
+        className={`flex w-full flex-wrap justify-between gap-x-1 gap-y-0.5 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 ${text}`}
       >
         <span>
           Izq{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
-            {round(viz.labelLeft)}%
+            {round(izqPct)}%
           </span>
         </span>
         <span>
           Centro{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
-            {round(viz.labelCenter)}%
+            {round(centroPct)}%
           </span>
         </span>
         <span>
           Der{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
-            {round(viz.labelRight)}%
+            {round(derPct)}%
           </span>
         </span>
       </div>
-      {showFoot ? (
-        <p
-          className={`${footText} ${size === "compact" && !shortFoot ? "line-clamp-2" : ""}`}
-        >
-          {shortFoot ? (
-            <>
-              {n} medio{n === 1 ? "" : "s"} · relleno desde el 50%: +{visualCoverageConstants.stepPct}%/medio
-              izq o der; gris crece con medios de centro (desde {visualCoverageConstants.centerBandMinPct}%)
-            </>
-          ) : size === "compact" ? (
-            <>
-              Colores desde el eje central ({visualCoverageConstants.axisPct}%): izq/der hacia los lados; franja gris
-              centrada si hay medios de centro. Abajo, anchos visuales; recuento: {izqPct}% / {centroPct}% / {derPct}%.
-            </>
-          ) : (
-            <>
-              La barra se rellena{" "}
-              <strong className="font-semibold text-zinc-700 dark:text-zinc-300">
-                desde el centro (50%)
-              </strong>{" "}
-              hacia cada lado: cada medio de izquierda suma{" "}
-              {visualCoverageConstants.stepPct}% hacia la izquierda desde el eje; cada
-              medio de derecha, {visualCoverageConstants.stepPct}% hacia la derecha. Los
-              medios de centro generan una franja gris simétrica alrededor del eje (más
-              medios de centro la ensanchan, hasta un máximo). Recuento de medios:{" "}
-              <span className="tabular-nums">
-                {izqPct}% / {centroPct}% / {derPct}%
-              </span>
-              ; los tres valores bajo la barra son anchos de color visibles.
-            </>
-          )}
-        </p>
-      ) : null}
     </div>
   );
 }
