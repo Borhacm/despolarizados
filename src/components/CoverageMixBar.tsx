@@ -67,30 +67,33 @@ export function CoverageMixBar({
           />
         ) : null}
       </div>
+      {/*
+        Móvil: una fila por métrica (etiqueta | %) para evitar columnas de 0px o
+        saltos letra a letra. Desktop: tres columnas con grupos alineados.
+      */}
       <div
-        className={`grid w-full min-w-0 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 ${text}`}
-        style={{
-          gridTemplateColumns: `${izqPct}% ${centroPct}% ${derPct}%`,
-        }}
+        className={`grid w-full grid-cols-1 gap-y-1 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 sm:grid-cols-3 sm:gap-x-2 sm:gap-y-0 ${text}`}
       >
-        <span className="min-w-0 break-words text-left leading-tight">
-          Izq{" "}
-          <span className="text-zinc-700 dark:text-zinc-300">
+        <div className="flex min-w-0 items-baseline justify-between gap-2 sm:justify-start">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Izq</span>
+          <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(izqPct)}%
           </span>
-        </span>
-        <span className="min-w-0 break-words text-center leading-tight">
-          Centro{" "}
-          <span className="text-zinc-700 dark:text-zinc-300">
+        </div>
+        <div className="flex min-w-0 items-baseline justify-between gap-2 sm:justify-center">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
+            Centro
+          </span>
+          <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(centroPct)}%
           </span>
-        </span>
-        <span className="min-w-0 break-words text-right leading-tight">
-          Der{" "}
-          <span className="text-zinc-700 dark:text-zinc-300">
+        </div>
+        <div className="flex min-w-0 items-baseline justify-between gap-2 sm:justify-end">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Der</span>
+          <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(derPct)}%
           </span>
-        </span>
+        </div>
       </div>
     </div>
   );
