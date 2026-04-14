@@ -87,20 +87,8 @@ export function HistoriaShareModal({
             </svg>
           </button>
         </div>
-        <p className="mb-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mb-4 line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">
           {title}
-        </p>
-        <p className="mb-4 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-          <strong className="font-semibold text-zinc-700 dark:text-zinc-300">
-            Enlace
-          </strong>
-          : WhatsApp, X y Reddit usan el URL canónico; la vista previa la generan
-          los metadatos sociales (imagen de portada, titular y barra de
-          cobertura).{" "}
-          <strong className="font-semibold text-zinc-700 dark:text-zinc-300">
-            Instagram
-          </strong>{" "}
-          es distinto: usa “leyenda” o “imagen Stories” más abajo.
         </p>
         <HistoriaShareOptions
           variant="modal"

@@ -2,6 +2,16 @@
 
 import { HistoriaShareOgPreview } from "@/components/share/HistoriaShareOgPreview";
 import { HistoriaShareDomExportSection } from "@/components/share/HistoriaShareDomExportSection";
+import {
+  IconFacebook,
+  IconImage,
+  IconLinkedIn,
+  IconLink,
+  IconReddit,
+  IconShareSystem,
+  IconWhatsApp,
+  IconX,
+} from "@/components/share/share-brand-icons";
 import { copyTextToClipboard } from "@/lib/copy-to-clipboard";
 import {
   historiaInstagramCaption,
@@ -22,22 +32,37 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 export type HistoriaShareOptionsProps = {
   historiaId: string;
   title: string;
-  /** URL canónica absoluta de la historia */
   url: string;
-  /** Barra horizontal (ficha) o rejilla amplia (modal en card). */
   variant?: "bar" | "modal";
-  /** Datos para export DOM (html-to-image); si falta, se oculta esa sección. */
   visual?: HistoriaShareVisualPayload | null;
 };
 
-function assetOrigin(canonicalUrl: string): string {
-  try {
-    return new URL(canonicalUrl).origin;
-  } catch {
-    if (typeof window !== "undefined") return window.location.origin;
-    return "";
-  }
+function useServerFetchPaths(historiaId: string, canonicalUrl: string) {
+  return useMemo(() => {
+    const ogPath = `/historia/${historiaId}/opengraph-image`;
+    const storyPath = `/historia/${historiaId}/story-image`;
+    if (typeof window === "undefined") {
+      try {
+        const origin = new URL(canonicalUrl).origin;
+        return { og: `${origin}${ogPath}`, story: `${origin}${storyPath}` };
+      } catch {
+        return { og: ogPath, story: storyPath };
+      }
+    }
+    try {
+      const origin = new URL(canonicalUrl).origin;
+      if (origin === window.location.origin) {
+        return { og: ogPath, story: storyPath };
+      }
+      return { og: `${origin}${ogPath}`, story: `${origin}${storyPath}` };
+    } catch {
+      return { og: ogPath, story: storyPath };
+    }
+  }, [historiaId, canonicalUrl]);
 }
+
+const iconBtnBase =
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200/90 bg-white shadow-sm transition hover:border-emerald-300/80 hover:bg-emerald-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-emerald-700/80 dark:hover:bg-emerald-950/30";
 
 export function HistoriaShareOptions({
   historiaId,
@@ -60,7 +85,7 @@ export function HistoriaShareOptions({
 
   const snippet = historiaShareSnippet(title);
   const igCaption = historiaInstagramCaption(title, url);
-  const base = useMemo(() => assetOrigin(url), [url]);
+  const fetchPaths = useServerFetchPaths(historiaId, url);
 
   const hostLabel = useMemo(() => {
     try {
@@ -70,23 +95,46 @@ export function HistoriaShareOptions({
     }
   }, [url]);
 
-  const ogImageSrc = `${base}/historia/${historiaId}/opengraph-image`;
-  const storyImagePath = `${base}/historia/${historiaId}/story-image`;
-
-  const links = useMemo(
-    () => [
-      { label: "X", href: buildTwitterIntentUrl(url, title) },
-      { label: "WhatsApp", href: buildWhatsAppShareUrl(title, url) },
-      { label: "LinkedIn", href: buildLinkedInShareUrl(url) },
-      { label: "Facebook", href: buildFacebookShareUrl(url) },
-      { label: "Reddit", href: buildRedditSubmitUrl(url, title) },
-    ],
+  const linkItems = useMemo(
+    () =>
+      [
+        {
+          key: "x",
+          href: buildTwitterIntentUrl(url, title),
+          label: "Abrir en X",
+          Icon: IconX,
+        },
+        {
+          key: "whatsapp",
+          href: buildWhatsAppShareUrl(title, url),
+          label: "Compartir en WhatsApp",
+          Icon: IconWhatsApp,
+        },
+        {
+          key: "linkedin",
+          href: buildLinkedInShareUrl(url),
+          label: "Compartir en LinkedIn",
+          Icon: IconLinkedIn,
+        },
+        {
+          key: "facebook",
+          href: buildFacebookShareUrl(url),
+          label: "Compartir en Facebook",
+          Icon: IconFacebook,
+        },
+        {
+          key: "reddit",
+          href: buildRedditSubmitUrl(url, title),
+          label: "Publicar en Reddit",
+          Icon: IconReddit,
+        },
+      ] as const,
     [title, url],
   );
 
   const flash = useCallback((msg: string) => {
     setFeedback(msg);
-    window.setTimeout(() => setFeedback(null), 2800);
+    window.setTimeout(() => setFeedback(null), 2600);
   }, []);
 
   const copyUrlToClipboardAsync = useCallback(async (): Promise<boolean> => {
@@ -103,7 +151,7 @@ export function HistoriaShareOptions({
     setShowIgManual(false);
     setError(null);
     void copyUrlToClipboardAsync().then((ok) => {
-      if (ok) flash("Enlace copiado al portapapeles.");
+      if (ok) flash("Enlace copiado.");
       else window.prompt("Copia el enlace:", url);
     });
   }, [copyUrlToClipboardAsync, flash, url]);
@@ -112,27 +160,23 @@ export function HistoriaShareOptions({
     setShowIgManual(false);
     setError(null);
 
-    const fallback = () => {
-      if (copyTextToClipboard(igCaption)) {
-        flash("Texto copiado. Pégalo en Instagram como leyenda.");
-        return;
-      }
-      if (navigator.clipboard?.writeText) {
-        void navigator.clipboard.writeText(igCaption).then(
-          () => flash("Texto copiado. Pégalo en Instagram como leyenda."),
-          () => setShowIgManual(true),
-        );
-        return;
-      }
-      setShowIgManual(true);
-    };
-
-    fallback();
+    if (copyTextToClipboard(igCaption)) {
+      flash("Leyenda copiada.");
+      return;
+    }
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(igCaption).then(
+        () => flash("Leyenda copiada."),
+        () => setShowIgManual(true),
+      );
+      return;
+    }
+    setShowIgManual(true);
   }, [flash, igCaption]);
 
   const fetchPng = useCallback(async (path: string) => {
     const res = await fetch(path, { cache: "no-store" });
-    if (!res.ok) throw new Error("No se pudo generar la imagen.");
+    if (!res.ok) throw new Error("fetch failed");
     return res.blob();
   }, []);
 
@@ -140,7 +184,7 @@ export function HistoriaShareOptions({
     setOgBusy(true);
     setError(null);
     try {
-      const blob = await fetchPng(ogImageSrc);
+      const blob = await fetchPng(fetchPaths.og);
       const name = `despolarizados-og-${historiaId.slice(0, 8)}.png`;
       const result = await sharePngBlobWithWebShareOrDownload({
         blob,
@@ -150,13 +194,10 @@ export function HistoriaShareOptions({
         url,
         copyUrlToClipboard: copyUrlToClipboardAsync,
       });
-      if (result === "shared") {
-        flash("Listo: elige la app en el menú de compartir si hace falta.");
-      } else if (result === "downloaded") {
-        flash("PNG descargado.");
-      }
+      if (result === "shared") flash("Listo.");
+      else if (result === "downloaded") flash("PNG descargado.");
     } catch {
-      setError("No se pudo obtener la imagen de vista previa.");
+      setError("No se pudo obtener el PNG 1.91:1 (revisa la red).");
     } finally {
       setOgBusy(false);
     }
@@ -164,8 +205,8 @@ export function HistoriaShareOptions({
     copyUrlToClipboardAsync,
     fetchPng,
     flash,
+    fetchPaths.og,
     historiaId,
-    ogImageSrc,
     snippet,
     title,
     url,
@@ -175,7 +216,7 @@ export function HistoriaShareOptions({
     setStoryBusy(true);
     setError(null);
     try {
-      const blob = await fetchPng(storyImagePath);
+      const blob = await fetchPng(fetchPaths.story);
       const name = `despolarizados-stories-${historiaId.slice(0, 8)}.png`;
       const caption = historiaInstagramCaption(title, url);
       const result = await sharePngBlobWithWebShareOrDownload({
@@ -189,16 +230,14 @@ export function HistoriaShareOptions({
       if (result === "shared") {
         flash(
           mobileUi
-            ? "Enlace copiado. En el menú, elige Instagram (Historia o feed) si aparece."
-            : "Enlace copiado. Elige la app en el menú de compartir.",
+            ? "Elige Instagram en el menú si aparece."
+            : "Listo.",
         );
       } else if (result === "downloaded") {
-        flash(
-          "PNG descargado. El enlace debería estar en el portapapeles.",
-        );
+        flash("PNG descargado.");
       }
     } catch {
-      setError("No se pudo preparar la imagen para Stories.");
+      setError("No se pudo obtener el PNG 9:16.");
     } finally {
       setStoryBusy(false);
     }
@@ -206,9 +245,9 @@ export function HistoriaShareOptions({
     copyUrlToClipboardAsync,
     fetchPng,
     flash,
+    fetchPaths.story,
     historiaId,
     mobileUi,
-    storyImagePath,
     title,
     url,
   ]);
@@ -241,41 +280,26 @@ export function HistoriaShareOptions({
   const hasNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
 
-  const btnClass =
+  const imgRowBtnClass =
     variant === "modal"
-      ? "inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-emerald-700 dark:hover:text-emerald-300"
-      : "inline-flex min-h-[44px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 sm:min-h-0 sm:py-1.5 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-emerald-700 dark:hover:text-emerald-300";
+      ? "inline-flex min-h-[44px] flex-1 basis-[calc(50%-0.25rem)] items-center justify-center gap-2 rounded-xl border border-zinc-200/90 bg-zinc-50/90 px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-300 hover:bg-white disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-emerald-700"
+      : "inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200/90 bg-zinc-50/90 px-2 py-2 text-xs font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-300 disabled:opacity-60 sm:min-h-0 sm:max-w-[11rem] dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-100";
 
-  const secondaryClass =
-    variant === "modal"
-      ? "inline-flex min-h-[2.5rem] w-full items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-600 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50/80 hover:text-emerald-900 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/40 sm:col-span-2"
-      : "inline-flex min-h-[44px] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50/90 px-3 py-2 text-xs font-semibold text-zinc-600 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50/80 hover:text-emerald-900 disabled:opacity-60 sm:min-h-0 sm:py-1.5 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/40";
+  const igBtnClass =
+    "inline-flex w-full min-h-[44px] items-center justify-center rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-violet-400 hover:bg-violet-50/60 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-violet-600 dark:hover:bg-violet-950/25 sm:min-h-[40px] sm:text-sm";
 
-  const igMutedClass =
+  const nativeBtnClass =
     variant === "modal"
-      ? "inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border border-violet-200/90 bg-violet-50/90 px-3 py-2 text-sm font-semibold text-violet-950 shadow-sm transition hover:border-violet-400 hover:bg-violet-100/80 disabled:opacity-60 dark:border-violet-800/80 dark:bg-violet-950/40 dark:text-violet-100 dark:hover:border-violet-500"
-      : "inline-flex min-h-[44px] items-center justify-center rounded-xl border border-violet-200/90 bg-violet-50/90 px-3 py-2 text-xs font-semibold text-violet-950 shadow-sm transition hover:border-violet-400 hover:bg-violet-100/80 disabled:opacity-60 sm:min-h-0 sm:py-1.5 dark:border-violet-800/80 dark:bg-violet-950/40 dark:text-violet-100 dark:hover:border-violet-500";
+      ? "flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-100/90 disabled:opacity-60 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-950/55"
+      : "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-3 py-2 text-xs font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-100/90 disabled:opacity-60 sm:min-h-0 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100";
 
-  const wrapClass =
+  const networksWrap =
     variant === "modal"
-      ? "grid grid-cols-2 gap-2 sm:grid-cols-3"
+      ? "flex flex-wrap justify-center gap-2 sm:justify-start"
       : "flex flex-wrap items-center justify-end gap-2";
-
-  const igWrapClass =
-    variant === "modal"
-      ? "grid grid-cols-1 gap-2 sm:grid-cols-2"
-      : "flex flex-wrap items-center justify-end gap-2";
-
-  const storyButtonLabel = mobileUi
-    ? "Imagen Stories / Instagram"
-    : "Imagen Stories (9:16)";
 
   return (
-    <div className="space-y-3">
-      {variant === "modal" ? (
-        <HistoriaShareOgPreview historiaId={historiaId} canonicalUrl={url} />
-      ) : null}
-
+    <div className={variant === "modal" ? "space-y-4" : "space-y-3"}>
       {feedback ? (
         <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
           {feedback}
@@ -291,14 +315,13 @@ export function HistoriaShareOptions({
       {showIgManual ? (
         <div className="rounded-xl border border-amber-200/90 bg-amber-50/90 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
           <p className="mb-2 text-xs font-medium text-amber-950 dark:text-amber-100">
-            No se pudo copiar automáticamente. Selecciona el texto y pulsa copiar
-            (o Cmd+C / Ctrl+C).
+            Copia manualmente (Cmd/Ctrl+C).
           </p>
           <textarea
             readOnly
             value={igCaption}
             rows={4}
-            aria-label="Texto para copiar manualmente en Instagram"
+            aria-label="Texto para copiar en Instagram"
             className="w-full resize-y rounded-lg border border-amber-200/80 bg-white px-2 py-1.5 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             onFocus={(e) => e.target.select()}
           />
@@ -310,79 +333,113 @@ export function HistoriaShareOptions({
           type="button"
           onClick={() => void onNativeShare()}
           disabled={shareBusy}
-          className={
-            variant === "modal"
-              ? "flex w-full min-h-[44px] items-center justify-center rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100/90 disabled:opacity-60 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-950/55"
-              : "flex w-full min-h-[44px] items-center justify-center rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-3 py-2 text-xs font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100/90 disabled:opacity-60 sm:w-auto dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100 dark:hover:bg-emerald-950/55"
-          }
+          className={nativeBtnClass}
         >
-          {shareBusy ? "Abriendo…" : "Compartir con el sistema…"}
+          <IconShareSystem className="h-5 w-5 shrink-0" />
+          {shareBusy ? "Abriendo…" : mobileUi ? "Compartir…" : "Compartir con el sistema"}
         </button>
       ) : null}
 
-      <div className={wrapClass}>
-        {links.map(({ label, href }) => (
-          <a
-            key={label}
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={btnClass}
-          >
-            {label}
-          </a>
-        ))}
-        <button type="button" onClick={onCopyUrl} className={btnClass}>
-          Copiar enlace
-        </button>
-      </div>
+      {variant === "modal" ? (
+        <HistoriaShareOgPreview historiaId={historiaId} canonicalUrl={url} />
+      ) : null}
 
-      <div
-        className={`rounded-xl border border-zinc-200/80 bg-white/60 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-950/30 ${variant === "modal" ? "space-y-2" : "space-y-2"}`}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          Instagram
-        </p>
-        <p className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
-          La app no abre enlaces con texto prellenado como otras redes: aquí el
-          flujo es leyenda (texto) o Stories (imagen 9:16); el enlace va en la
-          leyenda o en bio. En{" "}
-          <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-            móvil
-          </span>
-          , al compartir la imagen se abre el menú del sistema: suele aparecer
-          Instagram.
-        </p>
-        <div className={igWrapClass}>
-          <button
-            type="button"
-            onClick={onCopyInstagramCaption}
-            className={igMutedClass}
-            title="Copia titular, marca y URL para pegar en la publicación o Reels."
-          >
-            Copiar leyenda
-          </button>
+      {variant === "modal" ? (
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Imagen generada en servidor
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void onStoryImage()}
+              disabled={storyBusy}
+              className={imgRowBtnClass}
+              title="PNG 9:16 para Stories u otras apps"
+            >
+              <IconImage className="h-5 w-5 shrink-0" />
+              {storyBusy ? "…" : "9:16 PNG"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void onShareOgPng()}
+              disabled={ogBusy}
+              className={imgRowBtnClass}
+              title="PNG 1.91:1, misma proporción que la vista previa del enlace"
+            >
+              <IconImage className="h-5 w-5 shrink-0" />
+              {ogBusy ? "…" : "1.91:1 PNG"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={() => void onStoryImage()}
             disabled={storyBusy}
-            className={igMutedClass}
-            title="PNG vertical del servidor: copia el enlace y abre el menú para compartir la imagen (en móvil, Instagram)."
+            className={imgRowBtnClass}
           >
-            {storyBusy ? "Generando…" : storyButtonLabel}
+            <IconImage className="h-4 w-4 shrink-0" />
+            {storyBusy ? "…" : "9:16"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void onShareOgPng()}
+            disabled={ogBusy}
+            className={imgRowBtnClass}
+          >
+            <IconImage className="h-4 w-4 shrink-0" />
+            {ogBusy ? "…" : "1.91:1"}
+          </button>
+        </div>
+      )}
+
+      <div>
+        <p
+          className={`mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 ${variant === "bar" ? "sr-only" : ""}`}
+        >
+          Redes y enlace
+        </p>
+        <div className={networksWrap}>
+          {linkItems.map(({ key, href, label, Icon }) => (
+            <a
+              key={key}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              title={label}
+              className={iconBtnBase}
+            >
+              <Icon className="h-5 w-5" />
+            </a>
+          ))}
+          <button
+            type="button"
+            onClick={onCopyUrl}
+            aria-label="Copiar enlace"
+            title="Copiar enlace"
+            className={iconBtnBase}
+          >
+            <IconLink className="h-5 w-5" />
           </button>
         </div>
       </div>
 
-      <div className={wrapClass}>
+      <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/40 px-3 py-3 dark:border-zinc-700/80 dark:bg-zinc-950/30">
+        <p className="mb-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+          <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+            Instagram
+          </span>{" "}
+          no rellena enlaces en publicaciones: usa leyenda copiada o la imagen 9:16.
+        </p>
         <button
           type="button"
-          onClick={() => void onShareOgPng()}
-          disabled={ogBusy}
-          title="Misma imagen que usan las redes en la vista previa del enlace (1.91:1). En móvil puede abrir el menú de compartir archivo."
-          className={secondaryClass}
+          onClick={onCopyInstagramCaption}
+          className={igBtnClass}
         >
-          {ogBusy ? "Generando…" : "Imagen vista previa (1.91:1)"}
+          Copiar leyenda
         </button>
       </div>
 

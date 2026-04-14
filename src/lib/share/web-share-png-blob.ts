@@ -72,6 +72,8 @@ export async function sharePngBlobWithWebShareOrDownload(input: {
   a.download = fileName;
   a.rel = "noopener";
   a.click();
-  URL.revokeObjectURL(href);
+  window.setTimeout(() => {
+    URL.revokeObjectURL(href);
+  }, 0);
   return "downloaded";
 }

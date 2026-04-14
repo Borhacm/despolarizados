@@ -35,8 +35,8 @@ export function HistoriaShareDomExportSection({
 
   const btnClass =
     variant === "modal"
-      ? "inline-flex min-h-[2.5rem] w-full items-center justify-center rounded-xl border border-amber-200/90 bg-amber-50/90 px-3 py-2 text-sm font-semibold text-amber-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-100/80 disabled:opacity-60 dark:border-amber-800/70 dark:bg-amber-950/35 dark:text-amber-100 dark:hover:border-amber-600 sm:col-span-2"
-      : "inline-flex min-h-[44px] items-center justify-center rounded-xl border border-amber-200/90 bg-amber-50/90 px-3 py-2 text-xs font-semibold text-amber-950 shadow-sm transition hover:border-amber-400 hover:bg-amber-100/80 disabled:opacity-60 sm:min-h-0 sm:py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35 dark:text-amber-100 dark:hover:border-amber-600";
+      ? "inline-flex min-h-[2.5rem] w-full items-center justify-center rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-400/80 hover:bg-emerald-50/50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-emerald-600 sm:col-span-2"
+      : "inline-flex min-h-[44px] items-center justify-center rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-400/80 hover:bg-emerald-50/50 disabled:opacity-60 sm:min-h-0 sm:py-1.5 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-emerald-600";
 
   const runCapture = useCallback(
     async (mode: "story" | "og") => {
@@ -111,14 +111,14 @@ export function HistoriaShareDomExportSection({
       </div>
 
       <div
-        className={`rounded-xl border border-amber-200/70 bg-amber-50/50 px-3 py-3 dark:border-amber-900/50 dark:bg-amber-950/25 ${variant === "modal" ? "space-y-2" : "space-y-2"}`}
+        className={`rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3 py-3 dark:border-zinc-700/80 dark:bg-zinc-950/35 ${variant === "modal" ? "space-y-2" : "space-y-2"}`}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-900/90 dark:text-amber-200/90">
-          Exportar tarjeta (navegador)
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+          Si la portada falla (CORS)
         </p>
-        <p className="text-[11px] leading-relaxed text-amber-950/80 dark:text-amber-100/80">
-          Genera un PNG desde el DOM (html-to-image). Si la portada viene de otro
-          dominio sin CORS, puede salir vacía; entonces usa la imagen del servidor.
+        <p className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
+          PNG desde el navegador. Si la foto remota no carga, usa las imágenes del
+          servidor arriba.
         </p>
         <div
           className={
