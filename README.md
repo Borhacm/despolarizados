@@ -22,7 +22,7 @@ Sigue este orden una vez; después el día a día es solo **ingesta** (cron o ma
 
 1. En el **SQL Editor** de Supabase, ejecuta **en este orden** (si solo ejecutas el seed, fallará: *relation medios does not exist*):
    - **Primero** todo el contenido de `supabase/migrations/20260414000000_init.sql` (crea tablas y políticas).
-   - **Medios semilla:** o bien pega `supabase/seed_medios.sql`, o bien (recomendado si ya tienes `.env.local`) ejecuta en tu máquina **`npm run seed:medios`** — usa `SUPABASE_SERVICE_ROLE_KEY` y hace *upsert* de los **20 medios** (misma lista que `src/data/medios-seed.ts`). También puedes pulsar **Sincronizar medios semilla** en [http://localhost:3000/admin/medios](http://localhost:3000/admin/medios).
+   - **Medios semilla:** o bien pega `supabase/seed_medios.sql`, o bien (recomendado si ya tienes `.env.local`) ejecuta en tu máquina **`npm run seed:medios`** — usa `SUPABASE_SERVICE_ROLE_KEY` y hace *upsert* de los **20 medios** (misma lista que `src/data/medios-seed.ts`). También puedes pulsar **Sincronizar medios semilla** entrando por [http://localhost:3000/acceso-interno](http://localhost:3000/acceso-interno) → **Medios y alta de RSS**.
    - **Recomendado** `supabase/migrations/20260415000000_historias_fts.sql` — columna `search_vector` + índice GIN para búsqueda en español (si no la ejecutas, la app usa `ilike` como respaldo al buscar).
 2. Comprueba que en **Database → Extensions** esté habilitada la extensión **`vector`** (la migración la pide con `create extension if not exists vector`).
 
@@ -40,7 +40,7 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000). Si falta Supabase en `.env.local`, verás el aviso de configuración.
 
-En la home puedes **filtrar** por texto (`q`), **medio** (`medio`, slug) y **ventana de fechas** (`ventana`: `24h`, `7d`, `30d`, `all`), con **paginación** (`page`): por ejemplo `/?q=energía&ventana=7d&medio=el-pais&page=2`.
+En la home puedes **filtrar** por texto (`q`), **medio** (`medio`, slug), **orientación** (`orientacion`: `izquierda`, `centro`, `derecha`) y **ventana de fechas** (`ventana`: `24h`, `7d`, `30d`, `all`), con **paginación** (`page`): por ejemplo `/?q=energía&ventana=7d&medio=el-pais&page=2`.
 
 **Mi feed** (`/feed`): en la ficha de cada medio, **Seguir en Mi feed** guarda el slug en una **cookie** del navegador; el feed lista historias donde hay cobertura de al menos uno de esos medios (sin cuenta de usuario).
 
@@ -48,7 +48,7 @@ En la home puedes **filtrar** por texto (`q`), **medio** (`medio`, slug) y **ven
 
 Sin datos en tablas, la home mostrará **0 historias** hasta que ejecutes la ingesta (usa **OpenAI** y **service role**). Necesitas `OPENAI_API_KEY` y `SUPABASE_SERVICE_ROLE_KEY` correctos en `.env.local`.
 
-**Opción A — UI:** [http://localhost:3000/admin/ingesta](http://localhost:3000/admin/ingesta): introduce `ADMIN_SECRET` o `CRON_SECRET` y pulsa **Ejecutar ingesta ahora**.
+**Opción A — UI:** entra por [http://localhost:3000/acceso-interno](http://localhost:3000/acceso-interno) (no enlazado en la web pública; atajo **Alt+Shift+A** en la app) y abre **Ingesta de noticias**; introduce `ADMIN_SECRET` o `CRON_SECRET` y pulsa **Ejecutar ingesta ahora**.
 
 **Opción B — CLI (sin levantar el servidor):** con `.env.local` relleno:
 
@@ -65,11 +65,11 @@ curl -sS -H "Authorization: Bearer TU_CRON_SECRET" \
 
 Sustituye `TU_CRON_SECRET` por el valor de `.env.local`. La primera vez puede tardar (muchas llamadas a embeddings + feeds).
 
-Si OpenAI devuelve **429 / quota exceeded**, la ingesta no insertará artículos hasta que haya crédito o plan activo. Los RSS cambian con frecuencia: si un medio falla siempre, revisa su URL en `supabase/seed_medios.sql` (vuelve a ejecutar el seed en Supabase o edita el medio en `/admin/medios` cuando exista edición).
+Si OpenAI devuelve **429 / quota exceeded**, la ingesta no insertará artículos hasta que haya crédito o plan activo. Los RSS cambian con frecuencia: si un medio falla siempre, revisa su URL en `supabase/seed_medios.sql` (vuelve a ejecutar el seed en Supabase o edita el medio desde **acceso interno** → medios cuando exista edición).
 
 ### 6. Añadir medios sin tocar SQL
 
-- Entra en [http://localhost:3000/admin/medios](http://localhost:3000/admin/medios) (enlace también en el pie de página).
+- Entra en [http://localhost:3000/acceso-interno](http://localhost:3000/acceso-interno) y elige **Medios y alta de RSS**.
 - Introduce la misma clave que configuraste (`ADMIN_SECRET` o `CRON_SECRET`) y los datos del medio.
 
 Alternativa programática: `POST /api/medios` con `Authorization: Bearer CRON_SECRET` (ver más abajo).

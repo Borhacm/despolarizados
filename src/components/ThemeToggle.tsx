@@ -27,8 +27,10 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<ThemeChoice>("light");
 
   useEffect(() => {
-    setMounted(true);
-    setTheme(readDomTheme());
+    queueMicrotask(() => {
+      setMounted(true);
+      setTheme(readDomTheme());
+    });
   }, []);
 
   const toggle = useCallback(() => {

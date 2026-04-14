@@ -1,3 +1,4 @@
+import { ADMIN_HUB_PATH } from "@/lib/admin-hub";
 import Link from "next/link";
 
 export function HistoriasEmptyState({
@@ -58,10 +59,10 @@ export function HistoriasEmptyState({
         <li>
           Ejecuta la ingesta desde el panel:{" "}
           <Link
-            href="/admin/ingesta"
+            href={ADMIN_HUB_PATH}
             className="font-medium text-emerald-700 underline decoration-emerald-300/70 underline-offset-2 hover:text-emerald-900 dark:text-emerald-400"
           >
-            Admin → Ingesta
+            acceso interno → ingesta
           </Link>{" "}
           (misma clave que el cron), o bien con curl:
         </li>

@@ -10,9 +10,11 @@
     "ingest": "node --import tsx scripts/run-ingest.ts",
     "db:count": "node --import tsx scripts/db-count.ts",
     "backfill:dates": "node --import tsx scripts/backfill-ultima-pub.ts",
-    "seed:medios": "node --import tsx scripts/seed-medios.ts"
+    "seed:medios": "node --import tsx scripts/seed-medios.ts",
+    "dedupe-historias": "node --import tsx scripts/dedupe-historias.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "dotenv": "^17.4.2",
     "next": "16.2.3",

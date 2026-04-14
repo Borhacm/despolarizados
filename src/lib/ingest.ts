@@ -1,16 +1,20 @@
 import Parser from "rss-parser";
+import type { Item } from "rss-parser";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { factualidadRank } from "@/lib/factualidad";
+import { recomputeHistoria } from "@/lib/historia-recompute";
 import { embedOne } from "@/lib/embeddings";
 import { getIngestClusterMode } from "@/lib/ingest-mode";
-import {
-  combinedArticleText,
-  parseLexicalThreshold,
-  similarityForClustering,
-} from "@/lib/title-similarity";
+import { lexicalClusteringScore, parseLexicalThreshold } from "@/lib/title-similarity";
 import { cosineSimilarity, mergeEmbeddings, parseVector } from "@/lib/vector";
 
-const SIMILARITY_THRESHOLD = 0.82;
+/** Umbral coseno embedding vs. historia; por defecto igual que antes (0.82). */
+function embeddingMatchThreshold(): number {
+  const raw = process.env.INGEST_EMBEDDING_THRESHOLD?.trim();
+  if (!raw) return 0.82;
+  const n = Number.parseFloat(raw);
+  if (!Number.isFinite(n) || n <= 0 || n > 1) return 0.82;
+  return n;
+}
 const MAX_ITEMS_PER_FEED = 22;
 const MAX_HISTORIAS_COMPARE = 500;
 const LOOKBACK_DAYS = 14;
@@ -22,6 +26,68 @@ const parser = new Parser({
     Accept: "application/rss+xml, application/xml, text/xml, */*",
   },
 });
+
+const FETCH_TIMEOUT_MS = 25000;
+
+/** WordPress REST: mismo sitio desactivó RSS pero expone `/wp-json/wp/v2/posts`. */
+function isWordPressRestPostsUrl(url: string): boolean {
+  return url.includes("/wp-json/wp/v2/posts");
+}
+
+function stripHtmlToText(raw: string): string {
+  return raw
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+type WpRestPost = {
+  link?: string;
+  date?: string;
+  title?: { rendered?: string };
+  excerpt?: { rendered?: string };
+};
+
+async function loadFeedItems(feedUrl: string): Promise<Item[]> {
+  if (isWordPressRestPostsUrl(feedUrl)) {
+    const res = await fetch(feedUrl, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Despolarizados/0.1 (aggregator)",
+      },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = (await res.json()) as unknown;
+    if (!Array.isArray(data)) {
+      throw new Error("Respuesta WP-JSON inesperada (no es un array)");
+    }
+    const out: Item[] = [];
+    for (const row of data as WpRestPost[]) {
+      const link = row.link?.trim();
+      const titleHtml = row.title?.rendered ?? "";
+      const title = stripHtmlToText(titleHtml);
+      if (!link || !title) continue;
+      const summary = stripHtmlToText(row.excerpt?.rendered ?? "");
+      const iso =
+        row.date && !Number.isNaN(Date.parse(row.date))
+          ? new Date(row.date).toISOString()
+          : undefined;
+      out.push({
+        title,
+        link,
+        contentSnippet: summary,
+        isoDate: iso,
+      });
+    }
+    return out;
+  }
+
+  const feed = await parser.parseURL(feedUrl);
+  return feed.items ?? [];
+}
 
 export type IngestResult = {
   ok: boolean;
@@ -105,20 +171,16 @@ function findBestHistoriaOpenAI(
   pool: PoolOpenAI[],
   vec: number[],
 ): { id: string; score: number } | null {
+  const t = embeddingMatchThreshold();
   let best: { id: string; score: number } | null = null;
   for (const h of pool) {
     if (!h.embedding) continue;
     const score = cosineSimilarity(vec, h.embedding);
-    if (score >= SIMILARITY_THRESHOLD && (!best || score > best.score)) {
+    if (score >= t && (!best || score > best.score)) {
       best = { id: h.id, score };
     }
   }
   return best;
-}
-
-function historiaTextForLexical(h: PoolLexical): string {
-  const r = h.resumen_canonico?.replace(/\s+/g, " ").trim().slice(0, 420) ?? "";
-  return combinedArticleText(h.titulo_canonico, r);
 }
 
 function findBestHistoriaLexical(
@@ -127,86 +189,19 @@ function findBestHistoriaLexical(
   summary: string,
   threshold: number,
 ): { id: string; score: number } | null {
-  const incoming = combinedArticleText(title, summary);
   let best: { id: string; score: number } | null = null;
   for (const h of pool) {
-    const cand = historiaTextForLexical(h);
-    const score = similarityForClustering(incoming, cand);
+    const score = lexicalClusteringScore(
+      title,
+      summary,
+      h.titulo_canonico,
+      h.resumen_canonico,
+    );
     if (score >= threshold && (!best || score > best.score)) {
       best = { id: h.id, score };
     }
   }
   return best;
-}
-
-async function recomputeHistoria(
-  supabase: SupabaseClient,
-  historiaId: string,
-): Promise<void> {
-  const { data: arts, error } = await supabase
-    .from("articulos")
-    .select("id, titulo, resumen, fecha_pub, medio_id")
-    .eq("historia_id", historiaId);
-
-  if (error) throw error;
-  const rows = arts ?? [];
-  const medioIds = [...new Set(rows.map((r) => r.medio_id as string))];
-  const dates = rows
-    .map((r) => r.fecha_pub)
-    .filter(Boolean)
-    .sort() as string[];
-
-  const { data: mediosRows, error: mErr } =
-    medioIds.length > 0
-      ? await supabase
-          .from("medios")
-          .select("id, factualidad, nombre")
-          .in("id", medioIds)
-      : { data: [], error: null };
-
-  if (mErr) throw mErr;
-  const medioMap = new Map(
-    (mediosRows ?? []).map((m) => [m.id as string, m] as const),
-  );
-
-  let titulo = "";
-  let resumen: string | null = null;
-  let bestRank = -1;
-
-  for (const r of rows) {
-    const m = medioMap.get(r.medio_id as string);
-    const f = m?.factualidad ?? "media";
-    const rank = factualidadRank(f);
-    if (rank > bestRank) {
-      bestRank = rank;
-      titulo = r.titulo as string;
-      resumen = (r.resumen as string) ?? null;
-    }
-  }
-
-  const fallbackNow = new Date().toISOString();
-  /** Sin fechas en RSS, PostgREST excluye filas con `ultima_pub` null al filtrar por ventana. */
-  const primera_pub =
-    dates[0] ?? (rows.length > 0 ? fallbackNow : null);
-  const ultima_pub =
-    dates[dates.length - 1] ?? (rows.length > 0 ? fallbackNow : null);
-  const article_count = rows.length;
-  const medio_count = new Set(medioIds).size;
-  const importancia = article_count * 10 + medio_count * 12;
-
-  await supabase
-    .from("historias")
-    .update({
-      titulo_canonico: titulo || "Sin título",
-      resumen_canonico: resumen,
-      primera_pub,
-      ultima_pub,
-      article_count,
-      medio_count,
-      importancia,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", historiaId);
 }
 
 export async function runIngest(
@@ -232,15 +227,14 @@ export async function runIngest(
 
   let poolOpenAI: PoolOpenAI[] =
     clusterMode === "openai" ? await loadHistoriasPoolOpenAI(supabase) : [];
-  let poolLexical: PoolLexical[] =
-    clusterMode === "lexical" ? await loadHistoriasPoolLexical(supabase) : [];
+  /** Siempre cargado: modo léxico lo usa siempre; OpenAI lo usa como segundo intento si el embedding no casa. */
+  let poolLexical: PoolLexical[] = await loadHistoriasPoolLexical(supabase);
 
   for (const medio of list) {
     for (const feedUrl of medio.rss_urls) {
       feedsProcessed += 1;
       try {
-        const feed = await parser.parseURL(feedUrl);
-        const items = (feed.items ?? []).slice(0, MAX_ITEMS_PER_FEED);
+        const items = (await loadFeedItems(feedUrl)).slice(0, MAX_ITEMS_PER_FEED);
         for (const item of items) {
           itemsSeen += 1;
           const url = item.link?.trim();
@@ -283,7 +277,15 @@ export async function runIngest(
 
           if (clusterMode === "openai") {
             const embedding = await embedOne(vecText);
-            const match = findBestHistoriaOpenAI(poolOpenAI, embedding);
+            let match = findBestHistoriaOpenAI(poolOpenAI, embedding);
+            if (!match) {
+              match = findBestHistoriaLexical(
+                poolLexical,
+                title,
+                summary,
+                lexicalThreshold,
+              );
+            }
 
             if (match) {
               const { data: h, error: hErr } = await supabase
@@ -322,6 +324,7 @@ export async function runIngest(
               await recomputeHistoria(supabase, match.id);
               articlesInserted += 1;
               poolOpenAI = await loadHistoriasPoolOpenAI(supabase);
+              poolLexical = await loadHistoriasPoolLexical(supabase);
             } else {
               const { data: hNew, error: insHErr } = await supabase
                 .from("historias")
@@ -355,6 +358,7 @@ export async function runIngest(
               await recomputeHistoria(supabase, hid);
               articlesInserted += 1;
               poolOpenAI = await loadHistoriasPoolOpenAI(supabase);
+              poolLexical = await loadHistoriasPoolLexical(supabase);
             }
           } else {
             const match = findBestHistoriaLexical(

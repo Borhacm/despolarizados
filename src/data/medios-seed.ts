@@ -59,7 +59,7 @@ export const MEDIOS_SEED: MedioSeedRow[] = [
   {
     nombre: "RTVE",
     slug: "rtve",
-    rss_urls: ["https://api2.rtve.es/rss/temas_actualidad.xml"],
+    rss_urls: ["https://www.rtve.es/rss/temas_noticias.xml"],
     sesgo: "centro",
     factualidad: "alta",
     ownership: "RTVE (pública)",
@@ -149,7 +149,9 @@ export const MEDIOS_SEED: MedioSeedRow[] = [
   {
     nombre: "Agencia EFE",
     slug: "efe",
-    rss_urls: ["https://www.efe.com/efe/espana/1/rss"],
+    rss_urls: [
+      "https://efe.com/wp-json/wp/v2/posts?per_page=30&_fields=link,title,date,excerpt",
+    ],
     sesgo: "centro",
     factualidad: "alta",
     ownership: "EFE (agencia)",
@@ -213,6 +215,16 @@ export const MEDIOS_SEED: MedioSeedRow[] = [
     sesgo: "derecha",
     factualidad: "media",
     ownership: "Libertad Digital",
+    prioridad: 3,
+    active: true,
+  },
+  {
+    nombre: "La Razón",
+    slug: "la-razon",
+    rss_urls: ["https://www.larazon.es/?outputType=xml"],
+    sesgo: "derecha",
+    factualidad: "media-alta",
+    ownership: "Grupo Planeta",
     prioridad: 3,
     active: true,
   },

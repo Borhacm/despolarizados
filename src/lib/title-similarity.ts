@@ -88,8 +88,36 @@ function normalizeToken(s: string): string {
     .trim();
 }
 
+/**
+ * Variantes típicas en prensa ES que describen el mismo hecho; unifica antes del
+ * Jaccard para no partir clusters (p. ej. IPC vs inflación, carburantes vs combustibles).
+ */
+function collapseNewsSynonyms(t: string): string {
+  return t
+    .replace(/\bipc\b/g, "inflacion_ipc")
+    .replace(/\binflacion\b/g, "inflacion_ipc")
+    .replace(/\bcarburantes\b/g, "combustibles")
+    .replace(/\bcombustibles\b/g, "combustibles")
+    .replace(/\bgasolina\b/g, "combustibles")
+    .replace(/\bgasoleo\b/g, "combustibles")
+    .replace(/\balza\b/g, "subida")
+    .replace(/\bsubida\b/g, "subida")
+    .replace(/\bencarecimiento\b/g, "subida")
+    .replace(/\bencarecimientos\b/g, "subida");
+}
+
+/** "3,4 %" / "3.4%" → token alfanumérico estable para cruzar medios. */
+function normalizePercentFigures(t: string): string {
+  return t
+    .replace(/(\d),(\d)\s*%/g, "$1$2pct")
+    .replace(/(\d)\.(\d)\s*%/g, "$1$2pct");
+}
+
 export function normalizeForMatch(text: string): string {
-  return normalizeToken(text).replace(/[^a-z0-9ñ\s]/g, " ").replace(/\s+/g, " ");
+  let t = normalizeToken(text);
+  t = normalizePercentFigures(t);
+  t = collapseNewsSynonyms(t);
+  return t.replace(/[^a-z0-9ñ\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function tokenize(text: string): string[] {
@@ -153,6 +181,25 @@ export function similarityForClustering(a: string, b: string): number {
   const j = jaccardTokens(sa, sb);
   const bg = jaccardSets(charBigrams(sa), charBigrams(sb));
   return TOKEN_W * j + BIGRAM_W * bg;
+}
+
+/**
+ * Similitud para agrupar: compara titular+resumen **y** solo titulares, y se
+ * queda con el máximo. Así dos piezas del mismo hecho no se separan porque el
+ * cuerpo/resumen del RSS añade términos distintos (caso típico en prensa).
+ */
+export function lexicalClusteringScore(
+  incomingTitle: string,
+  incomingSummary: string,
+  historiaTitle: string,
+  historiaSummary: string | null,
+): number {
+  const incoming = combinedArticleText(incomingTitle, incomingSummary);
+  const sum = (historiaSummary ?? "").replace(/\s+/g, " ").trim().slice(0, 420);
+  const cand = combinedArticleText(historiaTitle, sum);
+  const full = similarityForClustering(incoming, cand);
+  const titlesOnly = similarityForClustering(incomingTitle, historiaTitle);
+  return Math.max(full, titlesOnly);
 }
 
 export function parseLexicalThreshold(): number {

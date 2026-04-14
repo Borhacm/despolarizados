@@ -125,6 +125,8 @@ export default async function Home({ searchParams }: PageProps) {
           ventana={ventana}
           orientacion={orientacion}
           medios={mediosOpts ?? []}
+          title="Historias del momento"
+          subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
         />
         <p className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
           No hay historias con ese medio o el medio no existe.
@@ -159,6 +161,8 @@ export default async function Home({ searchParams }: PageProps) {
           ventana={ventana}
           orientacion={orientacion}
           medios={mediosOpts ?? []}
+          title="Historias del momento"
+          subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
         />
         <p className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
           No hay historias con cobertura de esa orientación (con los filtros
@@ -253,11 +257,6 @@ export default async function Home({ searchParams }: PageProps) {
     <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
       <HomeHeader stats={stats} />
       <TrendingChips terms={trending} />
-      <div className="mb-2 border-l-2 border-emerald-500 pl-3 dark:border-emerald-500/80">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-          Historias del momento
-        </h2>
-      </div>
       <div className="mb-8">
         <StoryFilters
           q={qRaw}
@@ -265,6 +264,8 @@ export default async function Home({ searchParams }: PageProps) {
           ventana={ventana}
           orientacion={orientacion}
           medios={mediosOpts ?? []}
+          title="Historias del momento"
+          subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
         />
       </div>
 

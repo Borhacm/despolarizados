@@ -1,8 +1,10 @@
 import { BiasMeter } from "@/components/BiasMeter";
 import { FollowMedioButton } from "@/components/FollowMedioButton";
-import { FEED_COOKIE, parseFeedSlugs } from "@/lib/feed-cookie";
+import { FEED_COOKIE } from "@/lib/feed-cookie";
+import { resolveFollowingMedio } from "@/lib/feed-resolve";
 import { getMedioInitials } from "@/lib/medio-display";
 import { createPublicClient } from "@/lib/supabase/public";
+import { createServerSupabaseOrNull } from "@/lib/supabase/server";
 import { sesgoEsCentro, sesgoToPosition } from "@/lib/sesgo";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
@@ -30,7 +32,7 @@ export async function generateMetadata({
 
 export default async function MedioDetailPage(props: PageProps) {
   const { slug } = await props.params;
-  const supabase = createPublicClient();
+  const supabase = await createServerSupabaseOrNull();
   if (!supabase) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center text-zinc-600">
@@ -49,7 +51,16 @@ export default async function MedioDetailPage(props: PageProps) {
 
   const jar = await cookies();
   const feedRaw = jar.get(FEED_COOKIE)?.value ?? "";
-  const isFollowing = parseFeedSlugs(feedRaw).includes(slug);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isFollowing = await resolveFollowingMedio(
+    supabase,
+    user,
+    medio.id as string,
+    slug,
+    feedRaw,
+  );
 
   const { data: reciente } = await supabase
     .from("articulos")
@@ -115,7 +126,11 @@ export default async function MedioDetailPage(props: PageProps) {
                 </div>
               </div>
             </div>
-            <FollowMedioButton slug={slug} initialFollowing={isFollowing} />
+            <FollowMedioButton
+              slug={slug}
+              initialFollowing={isFollowing}
+              accountMode={Boolean(user)}
+            />
           </div>
           <div className="mt-8 max-w-xl">
             <BiasMeter position={pos} sesgo={medio.sesgo} />
@@ -128,7 +143,7 @@ export default async function MedioDetailPage(props: PageProps) {
           Últimas piezas analizadas
         </h2>
         <ul className="space-y-3">
-          {(reciente ?? []).map((a) => (
+          {(reciente ?? []).map((a: { id: string; titulo: string; url: string; fecha_pub: string | null; historia_id: string | null }) => (
             <li
               key={a.id}
               className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30"
