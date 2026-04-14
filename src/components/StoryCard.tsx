@@ -114,7 +114,12 @@ export function StoryCard({
           </p>
         ) : null}
         {coverageMix ? (
-          <CoverageMixBar mix={coverageMix} size="compact" className="pt-1" />
+          <CoverageMixBar
+            mix={coverageMix}
+            size="compact"
+            footnote="short"
+            className="pt-1"
+          />
         ) : null}
         <span className="inline-flex items-center text-sm font-semibold text-emerald-700 dark:text-emerald-300">
           Comparar titulares

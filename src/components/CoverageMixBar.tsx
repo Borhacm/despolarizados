@@ -9,8 +9,11 @@ export function CoverageMixBar({
   mix: CoverageMix;
   className?: string;
   size?: "default" | "compact";
-  /** Texto de transparencia (estilo Ground News: qué mide la barra). */
-  footnote?: boolean;
+  /**
+   * Transparencia tipo Ground News (qué mide la barra).
+   * `short`: una línea en listados; `true`: texto completo en fichas.
+   */
+  footnote?: boolean | "short";
 }) {
   const { izqPct, centroPct, derPct, izq, centro, der } = mix;
   const n = izq + centro + der;
@@ -22,6 +25,10 @@ export function CoverageMixBar({
     size === "compact"
       ? "text-[10px] leading-snug text-zinc-500 dark:text-zinc-500"
       : "text-[11px] leading-snug text-zinc-500 dark:text-zinc-400";
+
+  const showFoot =
+    footnote === true || footnote === "short";
+  const shortFoot = footnote === "short";
 
   return (
     <div className={`space-y-1 ${className}`}>
@@ -57,9 +64,17 @@ export function CoverageMixBar({
           <span className="text-zinc-700 dark:text-zinc-300">{derPct}%</span>
         </span>
       </div>
-      {footnote ? (
-        <p className={`${footText} ${size === "compact" ? "line-clamp-2" : ""}`}>
-          {size === "compact" ? (
+      {showFoot ? (
+        <p
+          className={`${footText} ${size === "compact" && !shortFoot ? "line-clamp-2" : ""}`}
+        >
+          {shortFoot ? (
+            <>
+              {n} medio{n === 1 ? "" : "s"} · % según etiqueta en el catálogo (no
+              el titular)
+              {n < 4 ? " · muestra pequeña" : ""}
+            </>
+          ) : size === "compact" ? (
             <>
               % = reparto de{" "}
               <span className="font-medium text-zinc-600 dark:text-zinc-400">
