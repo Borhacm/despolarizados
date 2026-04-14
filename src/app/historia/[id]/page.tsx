@@ -215,8 +215,17 @@ export default async function HistoriaPage(props: PageProps) {
         <p className="mb-2 text-xs text-zinc-500 sm:hidden dark:text-zinc-400">
           Desliza horizontalmente para ver todas las columnas.
         </p>
-        <div className="overflow-x-auto overscroll-x-contain rounded-2xl border border-zinc-200/90 bg-white shadow-sm [-webkit-overflow-scrolling:touch] dark:border-zinc-800 dark:bg-zinc-950/40">
-          <table className="w-full min-w-[720px] text-left text-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 rounded-l-2xl bg-gradient-to-r from-white to-transparent dark:from-zinc-950 sm:hidden"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 rounded-r-2xl bg-gradient-to-l from-white to-transparent dark:from-zinc-950 sm:hidden"
+            aria-hidden
+          />
+          <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+            <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50/90 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
               <tr>
                 <th className="px-4 py-3">Medio</th>
@@ -269,7 +278,8 @@ export default async function HistoriaPage(props: PageProps) {
                 );
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </section>
 

@@ -163,6 +163,9 @@ export function Nav({ userEmail = null }: { userEmail?: string | null }) {
   );
 }
 
+const navLinkBase =
+  "inline-flex shrink-0 items-center rounded-lg px-2.5 py-2 text-sm min-h-[44px] sm:min-h-0";
+
 function NavLink({
   href,
   active,
@@ -177,8 +180,8 @@ function NavLink({
       href={href}
       className={
         active
-          ? "shrink-0 rounded-lg bg-emerald-50 px-2.5 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800/80"
-          : "shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          ? `${navLinkBase} bg-emerald-50 font-semibold text-emerald-800 ring-1 ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800/80`
+          : `${navLinkBase} font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100`
       }
       aria-current={active ? "page" : undefined}
     >

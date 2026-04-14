@@ -187,7 +187,7 @@ export function StoryCard({
         className={
           isFeatured
             ? "flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-2"
-            : "flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2"
+            : "flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2.5 sm:gap-y-2"
         }
       >
         <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2">
@@ -201,7 +201,7 @@ export function StoryCard({
             className={
               isFeatured
                 ? "w-full min-w-0 sm:max-w-[min(100%,19rem)] sm:flex-1 sm:pl-1 md:max-w-[min(100%,21rem)]"
-                : "min-w-0 flex-1 basis-0 pl-1 sm:pl-2"
+                : "min-w-0 w-full basis-full pl-0 pt-0.5 sm:flex-1 sm:basis-0 sm:pl-2 sm:pt-0"
             }
           >
             <CoverageMixBar
@@ -218,8 +218,8 @@ export function StoryCard({
   const outerClass =
     layout === "split"
       ? isFeatured
-        ? "flex w-full flex-col gap-0 px-5 py-3 sm:flex-row sm:items-center sm:justify-start sm:gap-5 sm:py-5 md:gap-6 md:px-10 md:py-6"
-        : "flex w-full flex-col gap-0 px-5 py-3 sm:min-h-[152px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:py-4"
+        ? "flex w-full flex-col gap-0 px-4 py-3 sm:flex-row sm:items-center sm:justify-start sm:gap-5 sm:px-5 sm:py-5 md:gap-6 md:px-10 md:py-6"
+        : "flex w-full flex-col gap-0 px-4 py-3 sm:min-h-[152px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:px-5 sm:py-4"
       : "block";
 
   const inner = isSplit ? (

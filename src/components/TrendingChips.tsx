@@ -42,10 +42,10 @@ export function TrendingChips({
       </div>
       <ul className="flex flex-wrap gap-2">
         {terms.map((term, i) => (
-          <li key={`${term.q}-${i}`}>
+          <li key={`${term.q}-${i}`} className="min-w-0 max-w-full">
             <Link
               href={`${base}?q=${encodeURIComponent(term.q)}`}
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-white/90 px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-950 dark:border-emerald-800/60 dark:bg-zinc-900/80 dark:text-zinc-100 dark:hover:border-emerald-500/70 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-50"
+              className="inline-flex min-h-[44px] max-w-full min-w-0 items-center gap-2 rounded-full border border-emerald-200/90 bg-white/90 px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-950 sm:min-h-0 dark:border-emerald-800/60 dark:bg-zinc-900/80 dark:text-zinc-100 dark:hover:border-emerald-500/70 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-50"
             >
               <span
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600/10 text-[10px] font-bold tabular-nums text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
@@ -53,7 +53,9 @@ export function TrendingChips({
               >
                 {i + 1}
               </span>
-              <span>{term.label}</span>
+              <span className="min-w-0 break-words text-left leading-snug">
+                {term.label}
+              </span>
             </Link>
           </li>
         ))}
