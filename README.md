@@ -78,7 +78,7 @@ Alternativa programática: `POST /api/medios` con `Authorization: Bearer CRON_SE
 
 1. Conecta el repo o sube el proyecto a Vercel.
 2. En **Settings → Environment Variables**, copia **las mismas** variables que en `.env.local` (incluidas `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `CRON_SECRET`).
-3. Despliega. El archivo `vercel.json` define un cron hacia `/api/cron/ingest` **dos veces al día** (07:00 y 19:00 **UTC**), con `Authorization: Bearer CRON_SECRET` como en local. Si quieres otras horas o más frecuencia, cambia el campo `schedule` (cron de 5 campos, hora en UTC). En el plan gratuito de Vercel el cron puede tener limitaciones: [documentación de Vercel Cron](https://vercel.com/docs/cron-jobs).
+3. Despliega. El archivo `vercel.json` define un cron hacia `/api/cron/ingest` **una vez al día** (07:00 **UTC**) para ser compatible con el plan **Hobby** de Vercel (como mucho **un** disparo diario). En **Pro** puedes usar varias horas (p. ej. `0 7,19 * * *`). `Authorization: Bearer CRON_SECRET` debe coincidir con la variable en el proyecto. [Cron Jobs en Vercel](https://vercel.com/docs/cron-jobs).
 
 ---
 
