@@ -1,7 +1,9 @@
 import { Nav } from "@/components/Nav";
+import { THEME_STORAGE_KEY } from "@/lib/theme-storage";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,6 +25,8 @@ export const metadata: Metadata = {
     "Réplica en español del concepto Ground News: mismas historias, distintas redacciones, cobertura por orientación editorial.",
 };
 
+const themeInitScript = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var t=localStorage.getItem(k);if(t==="dark"){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,9 +35,13 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--background)] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <Nav />
         {children}
         <footer className="mt-auto border-t border-zinc-200/80 bg-white/70 py-8 text-center text-xs text-zinc-500 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/70">

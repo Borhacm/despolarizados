@@ -22,11 +22,9 @@ export function PaginationBar({
     return `${pathname}?${s}`;
   }
 
-  if (page <= 1 && !hasMore) return null;
-
   return (
     <nav
-      className="mt-10 flex items-center justify-center gap-4"
+      className="relative z-10 mt-10 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-zinc-200/90 bg-[var(--surface)] px-4 py-4 shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900/40"
       aria-label="Paginación"
     >
       {page > 1 ? (
@@ -37,11 +35,14 @@ export function PaginationBar({
           ← Anterior
         </Link>
       ) : (
-        <span className="rounded-xl border border-transparent px-4 py-2 text-sm text-zinc-400">
+        <span
+          className="rounded-xl border border-zinc-200/60 px-4 py-2 text-sm text-zinc-400 dark:border-zinc-700/80 dark:text-zinc-500"
+          aria-disabled
+        >
           ← Anterior
         </span>
       )}
-      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+      <span className="min-w-[7rem] text-center text-sm font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
         Página {page}
       </span>
       {hasMore ? (
@@ -52,7 +53,10 @@ export function PaginationBar({
           Siguiente →
         </Link>
       ) : (
-        <span className="rounded-xl border border-transparent px-4 py-2 text-sm text-zinc-400">
+        <span
+          className="rounded-xl border border-zinc-200/60 px-4 py-2 text-sm text-zinc-400 dark:border-zinc-700/80 dark:text-zinc-500"
+          aria-disabled
+        >
           Siguiente →
         </span>
       )}

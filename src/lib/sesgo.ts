@@ -23,3 +23,8 @@ export function sesgoLabelShort(sesgo: string): string {
   if (p > 62) return "Derecha";
   return "Centro";
 }
+
+/** Agrupación editorial “centro” (no izq/der) para acentos de UI en catálogo de medios. */
+export function sesgoEsCentro(sesgo: string): boolean {
+  return sesgoLabelShort(sesgo) === "Centro";
+}

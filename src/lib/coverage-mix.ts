@@ -10,6 +10,78 @@ export type CoverageMix = {
   derPct: number;
 };
 
+/** Cada medio izq/der suma 25% de ancho creciendo desde el eje (50%) hacia ese lado. */
+const VISUAL_STEP_PCT = 25;
+const VISUAL_AXIS_PCT = 50;
+/** Franja de centro: crece con más medios de centro (simétrica en el 50%), máx. 40%. */
+function centerBandWidthPct(centro: number): number {
+  if (centro <= 0) return 0;
+  return Math.min(40, 15 + centro * 5);
+}
+
+export type VisualSegment = { left: number; width: number };
+
+/**
+ * Geometría de la barra: todo se rellena **desde el centro (50%)** hacia fuera.
+ * - Izquierda: hacia la izquierda desde el eje (o desde el borde izq. de la franja gris).
+ * - Derecha: hacia la derecha desde el eje (o desde el borde der. de la franja gris).
+ * - Centro: franja gris centrada en el 50%; más medios de centro ensanchan la franja.
+ */
+export function visualCoverageLayout(mix: CoverageMix): {
+  left: VisualSegment | null;
+  center: VisualSegment | null;
+  right: VisualSegment | null;
+  labelLeft: number;
+  labelCenter: number;
+  labelRight: number;
+  hasCenterBand: boolean;
+} {
+  const { izq, centro, der } = mix;
+  const axis = VISUAL_AXIS_PCT;
+  const centerW = centerBandWidthPct(centro);
+  const hasCenterBand = centerW > 0;
+  const leftEdge = axis - centerW / 2;
+  const rightEdge = axis + centerW / 2;
+
+  const leftW = hasCenterBand
+    ? Math.min(leftEdge, izq * VISUAL_STEP_PCT)
+    : Math.min(axis, izq * VISUAL_STEP_PCT);
+  const rightW = hasCenterBand
+    ? Math.min(100 - rightEdge, der * VISUAL_STEP_PCT)
+    : Math.min(axis, der * VISUAL_STEP_PCT);
+
+  const leftSeg: VisualSegment | null =
+    leftW > 0
+      ? {
+          left: hasCenterBand ? leftEdge - leftW : axis - leftW,
+          width: leftW,
+        }
+      : null;
+
+  const centerSeg: VisualSegment | null = hasCenterBand
+    ? { left: leftEdge, width: centerW }
+    : null;
+
+  const rightSeg: VisualSegment | null =
+    rightW > 0 ? { left: rightEdge, width: rightW } : null;
+
+  return {
+    left: leftSeg,
+    center: centerSeg,
+    right: rightSeg,
+    labelLeft: leftW,
+    labelCenter: centerW,
+    labelRight: rightW,
+    hasCenterBand,
+  };
+}
+
+export const visualCoverageConstants = {
+  stepPct: VISUAL_STEP_PCT,
+  axisPct: VISUAL_AXIS_PCT,
+  centerBandMinPct: 20,
+} as const;
+
 /** Reparte 100 puntos entre tres conteos enteros (método del mayor resto). */
 function countsToPercentages(
   izq: number,

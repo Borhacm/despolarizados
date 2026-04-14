@@ -1,5 +1,6 @@
 "use client";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -70,6 +71,7 @@ export function Nav() {
             </svg>
             <span className="hidden sm:inline">Buscar</span>
           </Link>
+          <ThemeToggle />
         </nav>
       </div>
     </header>

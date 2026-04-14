@@ -1,6 +1,6 @@
 import { BiasMeter } from "@/components/BiasMeter";
 import { getMedioInitials } from "@/lib/medio-display";
-import { sesgoToPosition } from "@/lib/sesgo";
+import { sesgoEsCentro, sesgoToPosition } from "@/lib/sesgo";
 import Link from "next/link";
 
 type Medio = {
@@ -17,13 +17,33 @@ type Medio = {
 export function MedioCard({ m }: { m: Medio }) {
   const initials = getMedioInitials(m.nombre);
   const pos = sesgoToPosition(m.sesgo);
-  const hue =
-    pos < 40 ? "from-rose-400/90 to-rose-600/80" : pos > 60 ? "from-sky-400/90 to-sky-600/80" : "from-teal-400/90 to-emerald-600/80";
+  const esCentro = sesgoEsCentro(m.sesgo);
+  const hue = esCentro
+    ? "from-zinc-300/95 to-zinc-500/85 dark:from-zinc-600/90 dark:to-zinc-800/90"
+    : pos < 40
+      ? "from-rose-400/90 to-rose-600/80"
+      : pos > 60
+        ? "from-sky-400/90 to-sky-600/80"
+        : "from-teal-400/90 to-emerald-600/80";
 
   const feeds = m.rss_urls?.length ?? 0;
 
+  const cardHover = esCentro
+    ? "hover:border-zinc-300/90 hover:shadow-md dark:hover:border-zinc-600/50"
+    : "hover:border-emerald-200/90 hover:shadow-md dark:hover:border-emerald-800/45";
+
+  const titleLinkHover = esCentro
+    ? "hover:text-zinc-800 dark:hover:text-zinc-200"
+    : "hover:text-emerald-800 dark:hover:text-emerald-300";
+
+  const ctaClass = esCentro
+    ? "text-sm font-semibold text-zinc-600 transition group-hover:gap-1 dark:text-zinc-400"
+    : "text-sm font-semibold text-emerald-700 transition group-hover:gap-1 dark:text-emerald-300";
+
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm transition hover:border-emerald-200/90 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950/50 dark:hover:border-emerald-800/45">
+    <article
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm transition dark:border-zinc-800 dark:bg-zinc-950/50 ${cardHover}`}
+    >
       <div
         className={`h-1.5 w-full bg-gradient-to-r ${hue}`}
         aria-hidden
@@ -41,7 +61,7 @@ export function MedioCard({ m }: { m: Medio }) {
               <h2 className="text-lg font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
                 <Link
                   href={`/medios/${m.slug}`}
-                  className="hover:text-emerald-800 dark:hover:text-emerald-300"
+                  className={titleLinkHover}
                 >
                   {m.nombre}
                 </Link>
@@ -78,7 +98,7 @@ export function MedioCard({ m }: { m: Medio }) {
           </span>
           <Link
             href={`/medios/${m.slug}`}
-            className="text-sm font-semibold text-emerald-700 transition group-hover:gap-1 dark:text-emerald-300"
+            className={ctaClass}
           >
             Ver ficha →
           </Link>

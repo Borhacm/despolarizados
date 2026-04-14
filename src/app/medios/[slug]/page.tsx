@@ -3,7 +3,7 @@ import { FollowMedioButton } from "@/components/FollowMedioButton";
 import { FEED_COOKIE, parseFeedSlugs } from "@/lib/feed-cookie";
 import { getMedioInitials } from "@/lib/medio-display";
 import { createPublicClient } from "@/lib/supabase/public";
-import { sesgoToPosition } from "@/lib/sesgo";
+import { sesgoEsCentro, sesgoToPosition } from "@/lib/sesgo";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -59,19 +59,27 @@ export default async function MedioDetailPage(props: PageProps) {
     .limit(12);
 
   const pos = sesgoToPosition(medio.sesgo);
-  const hue =
-    pos < 40
+  const esCentro = sesgoEsCentro(medio.sesgo);
+  const hue = esCentro
+    ? "from-zinc-300/95 to-zinc-500/85 dark:from-zinc-600/90 dark:to-zinc-800/90"
+    : pos < 40
       ? "from-rose-400/90 to-rose-600/80"
       : pos > 60
         ? "from-sky-400/90 to-sky-600/80"
         : "from-emerald-400/90 to-teal-600/80";
+
+  const linkAccent =
+    "font-semibold decoration-zinc-300/70 underline-offset-2 hover:underline dark:text-zinc-400";
+  const linkEmerald =
+    "font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline dark:text-emerald-400";
+
   const initials = getMedioInitials(medio.nombre);
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
       <Link
         href="/medios"
-        className="text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline dark:text-emerald-400"
+        className={`text-sm ${esCentro ? `text-zinc-600 ${linkAccent} dark:text-zinc-400` : linkEmerald}`}
       >
         ← Todos los medios
       </Link>
@@ -130,7 +138,11 @@ export default async function MedioDetailPage(props: PageProps) {
                   href={u}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="break-all font-mono text-[13px] text-emerald-800 hover:underline dark:text-emerald-200"
+                  className={
+                    esCentro
+                      ? "break-all font-mono text-[13px] text-zinc-700 underline-offset-2 hover:underline dark:text-zinc-300"
+                      : "break-all font-mono text-[13px] text-emerald-800 hover:underline dark:text-emerald-200"
+                  }
                 >
                   {u}
                 </a>
@@ -154,7 +166,11 @@ export default async function MedioDetailPage(props: PageProps) {
                 href={a.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-zinc-900 hover:text-emerald-800 dark:text-zinc-100 dark:hover:text-emerald-200"
+                className={
+                  esCentro
+                    ? "font-medium text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-200"
+                    : "font-medium text-zinc-900 hover:text-emerald-800 dark:text-zinc-100 dark:hover:text-emerald-200"
+                }
               >
                 {a.titulo}
               </a>
@@ -162,7 +178,11 @@ export default async function MedioDetailPage(props: PageProps) {
                 <p className="mt-1 text-xs">
                   <Link
                     href={`/historia/${a.historia_id}`}
-                    className="text-emerald-700 hover:underline dark:text-emerald-400"
+                    className={
+                      esCentro
+                        ? "text-zinc-600 underline-offset-2 hover:underline dark:text-zinc-400"
+                        : "text-emerald-700 hover:underline dark:text-emerald-400"
+                    }
                   >
                     Ver historia agrupada
                   </Link>

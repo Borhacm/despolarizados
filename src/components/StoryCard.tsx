@@ -23,6 +23,29 @@ function skewLabelEs(
   return "centro";
 }
 
+/** Misma huella que una foto para alinear filas del listado. */
+function MediaPlaceholder() {
+  return (
+    <div className="flex h-full w-full flex-col items-start justify-center gap-1 bg-gradient-to-br from-zinc-100 to-zinc-200/90 px-3 py-2 text-zinc-400 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-500">
+      <svg
+        className="h-8 w-8 opacity-60"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden
+      >
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="8.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
+        <path d="m21 15-5-5-4 4-2-2-4 4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="text-[10px] font-medium uppercase tracking-wide">
+        Sin imagen
+      </span>
+    </div>
+  );
+}
+
 export function StoryCard({
   h,
   coverUrl,
@@ -43,51 +66,109 @@ export function StoryCard({
   size?: "default" | "featured";
 }) {
   const isFeatured = size === "featured";
+  const isSplit = layout === "split";
+
+  const splitMediaShell =
+    isFeatured && isSplit
+      ? "relative w-full shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900 aspect-[21/9] sm:aspect-auto sm:min-h-[200px] md:min-h-[260px]"
+      : "relative w-full shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900 aspect-[4/3] sm:aspect-auto sm:h-[152px] sm:w-56 md:w-64";
+
+  const stackMediaShell =
+    "relative aspect-[2/1] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900";
+
+  /** El padding horizontal lo lleva el `Link` en split para alinear foto y texto. */
+  const bodySplit = isFeatured
+    ? "flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-0 py-4 sm:gap-4 sm:py-0"
+    : "flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-0 py-4 sm:gap-3 sm:py-0";
+
+  const bodyStack = isFeatured
+    ? "flex flex-col gap-3 p-6 sm:gap-4 md:p-10"
+    : "flex flex-col gap-3 p-5";
+
+  const titleClass = isFeatured
+    ? "line-clamp-4 text-balance text-2xl font-bold leading-tight tracking-tight text-zinc-900 group-hover:text-emerald-900 dark:text-zinc-50 dark:group-hover:text-emerald-200 sm:text-3xl"
+    : isSplit
+      ? "line-clamp-3 text-xl font-bold leading-snug tracking-tight text-zinc-900 group-hover:text-emerald-900 dark:text-zinc-50 dark:group-hover:text-emerald-200"
+      : "line-clamp-3 text-lg font-semibold leading-snug text-zinc-900 group-hover:text-emerald-900 dark:text-zinc-50 dark:group-hover:text-emerald-200";
+
+  const summaryClass =
+    "line-clamp-3 min-h-[4.25rem] text-sm leading-relaxed text-zinc-600 dark:text-zinc-400";
+
+  const mediaBlock =
+    isSplit ? (
+      <div className={splitMediaShell}>
+        {coverUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- dominios RSS heterogéneos */}
+            <img
+              src={coverUrl}
+              alt=""
+              className="h-full w-full object-cover object-left transition duration-300 group-hover:scale-[1.02]"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          </>
+        ) : (
+          <MediaPlaceholder />
+        )}
+      </div>
+    ) : coverUrl ? (
+      <div className={stackMediaShell}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- dominios RSS heterogéneos */}
+        <img
+          src={coverUrl}
+          alt=""
+          className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
+      </div>
+    ) : null;
+
+  const splitLeftColClass = isFeatured
+    ? "flex w-full shrink-0 flex-col gap-2 md:w-[46%]"
+    : "flex w-full shrink-0 flex-col gap-2 sm:w-56 md:w-64";
+
+  const compareCta = (
+    <span className="inline-flex items-center text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+      Comparar titulares
+      <span className="ml-1 transition group-hover:translate-x-0.5">→</span>
+    </span>
+  );
+
+  /** Con foto (split o stack): CTA bajo la imagen; sin foto en stack: al final del cuerpo. */
+  const ctaBelowMedia = isSplit || Boolean(coverUrl);
+
   const inner = (
     <>
-      {coverUrl ? (
-        <div
-          className={
-            isFeatured && layout === "split"
-              ? "relative aspect-[21/9] w-full shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:aspect-auto sm:min-h-[200px] md:min-h-[260px] md:w-[46%]"
-              : layout === "split"
-                ? "relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:aspect-auto sm:h-auto sm:min-h-[148px] sm:w-56 md:w-64"
-                : "relative aspect-[2/1] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900"
-          }
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element -- dominios RSS heterogéneos */}
-          <img
-            src={coverUrl}
-            alt=""
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-          />
+      {isSplit ? (
+        <div className={splitLeftColClass}>
+          {mediaBlock}
+          {compareCta}
         </div>
-      ) : null}
-      <div
-        className={
-          coverUrl
-            ? layout === "split"
-              ? isFeatured
-                ? "flex flex-1 flex-col justify-center space-y-4 p-6 sm:py-8 md:p-10"
-                : "flex flex-1 flex-col justify-center space-y-3 p-5 sm:py-6"
-              : "space-y-3 p-5 pt-4"
-            : isFeatured
-              ? "space-y-4 p-6 md:p-10"
-              : "space-y-3 p-5"
-        }
-      >
-        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+      ) : (
+        <>
+          {mediaBlock}
+          {coverUrl ? (
+            <div className="px-5 pt-2">{compareCta}</div>
+          ) : null}
+        </>
+      )}
+      <div className={isSplit ? bodySplit : bodyStack}>
+        <div className="flex min-h-[1.25rem] flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
           <span className="rounded-md border border-zinc-200/90 bg-zinc-50 px-2.5 py-0.5 font-semibold tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200">
             {h.medio_count} fuentes · {h.article_count} artículos
           </span>
           {h.ultima_pub ? (
             <time dateTime={h.ultima_pub}>{formatWhen(h.ultima_pub)}</time>
-          ) : null}
+          ) : (
+            <span className="invisible tabular-nums" aria-hidden>
+              —
+            </span>
+          )}
         </div>
         {blindspotHint ? (
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+          <p className="min-h-[1.25rem] text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
             Cobertura dominante: {skewLabelEs(blindspotHint.label)} (~
             {blindspotHint.pct}%)
           </p>
@@ -97,34 +178,21 @@ export function StoryCard({
             Historia destacada
           </p>
         ) : null}
-        <h2
-          className={
-            isFeatured
-              ? "text-balance text-2xl font-bold leading-tight tracking-tight text-zinc-900 group-hover:text-emerald-900 dark:text-zinc-50 dark:group-hover:text-emerald-200 sm:text-3xl"
-              : layout === "split"
-                ? "text-xl font-bold leading-snug tracking-tight text-zinc-900 group-hover:text-emerald-900 dark:text-zinc-50 dark:group-hover:text-emerald-200"
-                : "text-lg font-semibold leading-snug text-zinc-900 group-hover:text-emerald-900 dark:text-zinc-50 dark:group-hover:text-emerald-200"
-          }
-        >
-          {h.titulo_canonico}
-        </h2>
-        {h.resumen_canonico ? (
-          <p className="line-clamp-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {h.resumen_canonico}
-          </p>
-        ) : null}
+        <h2 className={titleClass}>{h.titulo_canonico}</h2>
+        <p className={summaryClass}>
+          {h.resumen_canonico?.trim() ? h.resumen_canonico : "\u00A0"}
+        </p>
         {coverageMix ? (
           <CoverageMixBar
             mix={coverageMix}
             size="compact"
             footnote="short"
-            className="pt-1"
+            className="pt-0.5"
           />
-        ) : null}
-        <span className="inline-flex items-center text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-          Comparar titulares
-          <span className="ml-1 transition group-hover:translate-x-0.5">→</span>
-        </span>
+        ) : (
+          <div className="h-[3.25rem] shrink-0" aria-hidden />
+        )}
+        {!ctaBelowMedia ? compareCta : null}
       </div>
     </>
   );
@@ -141,7 +209,13 @@ export function StoryCard({
     >
       <Link
         href={`/historia/${h.id}`}
-        className={layout === "split" ? "flex flex-col sm:flex-row" : "block"}
+        className={
+          layout === "split"
+            ? isFeatured
+              ? "flex w-full flex-col gap-0 px-5 py-3 sm:flex-row sm:items-center sm:justify-start sm:gap-5 sm:py-5 md:gap-6 md:px-10 md:py-6"
+              : "flex w-full flex-col gap-0 px-5 py-3 sm:min-h-[152px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:py-4"
+            : "block"
+        }
       >
         {inner}
       </Link>
