@@ -68,28 +68,26 @@ export function CoverageMixBar({
         ) : null}
       </div>
       {/*
-        Móvil: una fila por métrica (etiqueta | %) para evitar columnas de 0px o
-        saltos letra a letra. Desktop: tres columnas con grupos alineados.
+        Etiqueta + % juntos (gap), no en los extremos. Móvil: filas apiladas;
+        sm+: tres columnas con grupos alineados izq / centro / der.
       */}
       <div
         className={`grid w-full grid-cols-1 gap-y-1 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 sm:grid-cols-3 sm:gap-x-2 sm:gap-y-0 ${text}`}
       >
-        <div className="flex min-w-0 items-baseline justify-between gap-2 sm:justify-start">
-          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Izq</span>
+        <div className="flex min-w-0 items-baseline justify-start gap-1.5">
+          <span className="text-zinc-500 dark:text-zinc-400">Izq</span>
           <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(izqPct)}%
           </span>
         </div>
-        <div className="flex min-w-0 items-baseline justify-between gap-2 sm:justify-center">
-          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
-            Centro
-          </span>
+        <div className="flex min-w-0 items-baseline justify-start gap-1.5 sm:justify-center">
+          <span className="text-zinc-500 dark:text-zinc-400">Centro</span>
           <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(centroPct)}%
           </span>
         </div>
-        <div className="flex min-w-0 items-baseline justify-between gap-2 sm:justify-end">
-          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Der</span>
+        <div className="flex min-w-0 items-baseline justify-start gap-1.5 sm:justify-end">
+          <span className="text-zinc-500 dark:text-zinc-400">Der</span>
           <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(derPct)}%
           </span>
