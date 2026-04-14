@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 export default function AccesoInternoPage() {
   return (
-    <main className="mx-auto max-w-lg flex-1 px-4 py-16 sm:px-6">
-      <div className="rounded-2xl border border-zinc-200 bg-[var(--surface)] p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
+    <main className="mx-auto max-w-lg flex-1 overflow-x-clip px-4 py-12 sm:px-6 sm:py-16">
+      <div className="rounded-2xl border border-zinc-200 bg-[var(--surface)] p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
           Uso interno
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="mt-2 text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-2xl">
           Administración
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -41,7 +41,7 @@ export default function AccesoInternoPage() {
           <li>
             <Link
               href="/admin/ingesta"
-              className="block rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-sm font-semibold text-emerald-900 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/60"
+              className="flex min-h-[48px] items-center rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-sm font-semibold text-emerald-900 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/60"
             >
               Ingesta de noticias
             </Link>
@@ -49,7 +49,7 @@ export default function AccesoInternoPage() {
           <li>
             <Link
               href="/admin/medios"
-              className="block rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
+              className="flex min-h-[48px] items-center rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
             >
               Medios y alta de RSS
             </Link>
@@ -57,7 +57,7 @@ export default function AccesoInternoPage() {
           <li>
             <Link
               href="/admin/historias"
-              className="block rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
+              className="flex min-h-[48px] items-center rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
             >
               Fusionar historias duplicadas
             </Link>

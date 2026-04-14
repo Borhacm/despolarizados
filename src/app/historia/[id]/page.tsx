@@ -1,7 +1,10 @@
 import { BiasMeter } from "@/components/BiasMeter";
 import { CoverageMixBar } from "@/components/CoverageMixBar";
+import { HistoriaShareBar } from "@/components/HistoriaShareBar";
 import { SesgoPill } from "@/components/SesgoPill";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import { coverageMixFromSesgos } from "@/lib/coverage-mix";
+import { fetchHistoriaShareFields } from "@/lib/historia-share";
 import { formatDateTimeEs } from "@/lib/format";
 import { createPublicClient } from "@/lib/supabase/public";
 import { sesgoToPosition } from "@/lib/sesgo";
@@ -17,17 +20,60 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  const base = getAppBaseUrl();
+  const canonical = `${base}/historia/${id}`;
   const supabase = createPublicClient();
-  if (!supabase) return { title: "Historia" };
-  const { data } = await supabase
-    .from("historias")
-    .select("titulo_canonico")
-    .eq("id", id)
-    .maybeSingle();
-  const t = data?.titulo_canonico as string | undefined;
-  if (!t) return { title: "Historia" };
+  if (!supabase) {
+    return {
+      title: "Historia",
+      metadataBase: new URL(base),
+      alternates: { canonical },
+    };
+  }
+  const fields = await fetchHistoriaShareFields(supabase, id);
+  if (!fields) {
+    return {
+      title: "Historia",
+      metadataBase: new URL(base),
+      alternates: { canonical },
+    };
+  }
+  const t = fields.titulo_canonico;
   const short = t.length > 58 ? `${t.slice(0, 55)}…` : t;
-  return { title: short };
+  const desc =
+    fields.resumen_canonico?.slice(0, 160) ??
+    `Comparativa de medios: ${fields.medio_count} medios, ${fields.article_count} artículos.`;
+
+  const ogImagePath = `/historia/${id}/opengraph-image`;
+
+  return {
+    title: short,
+    description: desc,
+    metadataBase: new URL(base),
+    alternates: { canonical },
+    openGraph: {
+      title: t,
+      description: desc,
+      url: canonical,
+      siteName: "Despolarizados",
+      locale: "es_ES",
+      type: "article",
+      images: [
+        {
+          url: ogImagePath,
+          width: 1200,
+          height: 630,
+          alt: t,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t,
+      description: desc,
+      images: [ogImagePath],
+    },
+  };
 }
 
 export default async function HistoriaPage(props: PageProps) {
@@ -105,12 +151,14 @@ export default async function HistoriaPage(props: PageProps) {
     });
   const heroImage = dated[0]?.imagen_url as string | undefined;
 
+  const shareUrl = `${getAppBaseUrl()}/historia/${id}`;
+
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <div className="mb-8 space-y-4">
         <Link
           href="/"
-          className="text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline dark:text-emerald-400"
+          className="inline-flex min-h-[44px] items-center text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline sm:min-h-0 dark:text-emerald-400"
         >
           ← Inicio
         </Link>
@@ -118,14 +166,21 @@ export default async function HistoriaPage(props: PageProps) {
           Comparativa · {historia.medio_count} medios · {historia.article_count}{" "}
           artículos
         </p>
-        <h1 className="text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+        <h1 className="text-balance text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
           {historia.titulo_canonico}
         </h1>
         {historia.resumen_canonico ? (
-          <p className="max-w-3xl text-pretty text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+          <p className="max-w-3xl text-pretty text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
             {historia.resumen_canonico}
           </p>
         ) : null}
+        <div className="max-w-3xl pt-2">
+          <HistoriaShareBar
+            historiaId={id}
+            title={historia.titulo_canonico}
+            url={shareUrl}
+          />
+        </div>
         {heroImage ? (
           <div className="relative mt-6 max-h-[420px] overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -157,7 +212,10 @@ export default async function HistoriaPage(props: PageProps) {
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
           Medios ordenados en el espectro (izq. → der.)
         </h2>
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
+        <p className="mb-2 text-xs text-zinc-500 sm:hidden dark:text-zinc-400">
+          Desliza horizontalmente para ver todas las columnas.
+        </p>
+        <div className="overflow-x-auto overscroll-x-contain rounded-2xl border border-zinc-200/90 bg-white shadow-sm [-webkit-overflow-scrolling:touch] dark:border-zinc-800 dark:bg-zinc-950/40">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50/90 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
               <tr>

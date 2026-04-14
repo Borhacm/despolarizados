@@ -14,8 +14,10 @@ import {
 } from "@/lib/orientacion-filter";
 import { sanitizeSearchInput } from "@/lib/search-sanitize";
 import type { HistoriaRow } from "@/lib/types";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import { createPublicClient } from "@/lib/supabase/public";
 import { HistoriasEmptyState } from "@/components/HistoriasEmptyState";
+import { LogoMark } from "@/components/LogoMark";
 import { TrendingChips } from "@/components/TrendingChips";
 import { trendingTermsFromTitles } from "@/lib/trending-keywords";
 import Link from "next/link";
@@ -37,6 +39,7 @@ type PageProps = {
 
 export default async function Home({ searchParams }: PageProps) {
   const supabase = createPublicClient();
+  const base = getAppBaseUrl();
   const sp = await searchParams;
 
   const qRaw = typeof sp.q === "string" ? sp.q : "";
@@ -56,7 +59,7 @@ export default async function Home({ searchParams }: PageProps) {
 
   if (!supabase) {
     return (
-      <main className="mx-auto max-w-3xl flex-1 px-4 py-16 text-center">
+      <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           Configura Supabase
         </h1>
@@ -117,7 +120,7 @@ export default async function Home({ searchParams }: PageProps) {
 
   if (historiaIdsMedio && historiaIdsMedio.length === 0) {
     return (
-      <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto max-w-5xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
         <HomeHeader stats={stats} />
         <StoryFilters
           q={qRaw}
@@ -153,7 +156,7 @@ export default async function Home({ searchParams }: PageProps) {
 
   if (historiaIdsIn !== undefined && historiaIdsIn.length === 0) {
     return (
-      <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto max-w-5xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
         <HomeHeader stats={stats} />
         <StoryFilters
           q={qRaw}
@@ -201,7 +204,7 @@ export default async function Home({ searchParams }: PageProps) {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-3xl flex-1 px-4 py-16 text-center">
+      <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-16 text-center">
         <p className="font-medium text-red-600">Error al cargar historias</p>
         <p className="mt-2 font-mono text-sm text-red-600/90">{error.message}</p>
         <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
@@ -254,59 +257,74 @@ export default async function Home({ searchParams }: PageProps) {
       : [null, rows];
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <HomeHeader stats={stats} />
       <TrendingChips terms={trending} />
-      <div className="mb-8">
-        <StoryFilters
-          q={qRaw}
-          medio={medioSlug}
-          ventana={ventana}
-          orientacion={orientacion}
-          medios={mediosOpts ?? []}
-          title="Historias del momento"
-          subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
-        />
-      </div>
-
-      {rows.length === 0 ? (
-        stats.historias === 0 ? (
-          <HistoriasEmptyState variant="no-catalog" />
-        ) : (
-          <HistoriasEmptyState variant="no-match" />
-        )
-      ) : (
-        <>
-          {featured ? (
-            <div className="mb-8">
-              <StoryCard
-                h={featured}
-                coverUrl={covers.get(featured.id)}
-                coverageMix={coverageMixes.get(featured.id) ?? null}
-                layout="split"
-                size="featured"
-              />
-            </div>
-          ) : null}
-          <ul className="space-y-5">
-            {rest.map((h) => (
-              <li key={h.id}>
-                <StoryCard
-                  h={h}
-                  coverUrl={covers.get(h.id)}
-                  coverageMix={coverageMixes.get(h.id) ?? null}
-                  layout="split"
-                />
-              </li>
-            ))}
-          </ul>
-          <PaginationBar
-            page={page}
-            hasMore={hasMore}
-            query={paginationQuery}
+      <div className="relative isolate">
+        <div
+          className="pointer-events-none absolute -right-6 top-0 z-0 select-none sm:-right-10 sm:top-4 md:top-8"
+          aria-hidden
+        >
+          <LogoMark
+            size="pageBackdropHome"
+            className="opacity-[0.08] dark:opacity-[0.11]"
           />
-        </>
-      )}
+        </div>
+        <div className="relative z-10">
+          <div className="mb-8">
+            <StoryFilters
+              q={qRaw}
+              medio={medioSlug}
+              ventana={ventana}
+              orientacion={orientacion}
+              medios={mediosOpts ?? []}
+              title="Historias del momento"
+              subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
+            />
+          </div>
+
+          {rows.length === 0 ? (
+            stats.historias === 0 ? (
+              <HistoriasEmptyState variant="no-catalog" />
+            ) : (
+              <HistoriasEmptyState variant="no-match" />
+            )
+          ) : (
+            <>
+              {featured ? (
+                <div className="mb-8">
+                  <StoryCard
+                    h={featured}
+                    coverUrl={covers.get(featured.id)}
+                    coverageMix={coverageMixes.get(featured.id) ?? null}
+                    layout="split"
+                    size="featured"
+                    shareUrl={`${base}/historia/${featured.id}`}
+                  />
+                </div>
+              ) : null}
+              <ul className="space-y-5">
+                {rest.map((h) => (
+                  <li key={h.id}>
+                    <StoryCard
+                      h={h}
+                      coverUrl={covers.get(h.id)}
+                      coverageMix={coverageMixes.get(h.id) ?? null}
+                      layout="split"
+                      shareUrl={`${base}/historia/${h.id}`}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <PaginationBar
+                page={page}
+                hasMore={hasMore}
+                query={paginationQuery}
+              />
+            </>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
@@ -320,43 +338,46 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
   }).format(new Date());
 
   return (
-    <div className="mb-8 flex flex-col gap-6 rounded-2xl border border-zinc-200/80 bg-[var(--surface)] p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-zinc-950/35 sm:p-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">
-          {dateLine}
-        </p>
-        <h1 className="mt-3 text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
-          Ve todos los lados de cada noticia
-        </h1>
-        <p className="mt-4 max-w-2xl text-pretty text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Agrupamos la misma historia desde varios medios españoles y mostramos
-          cómo se reparte la cobertura en el espectro editorial (referencia
-          orientativa).{" "}
-          <Link
-            href="/medios"
-            className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
-          >
-            Medios
-          </Link>{" "}
-          ·{" "}
-          <Link
-            href="/feed"
-            className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
-          >
-            Para ti
-          </Link>{" "}
-          ·{" "}
-          <Link
-            href="/angulo-muerto"
-            className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
-          >
-            Ángulo muerto
-          </Link>
-          .
-        </p>
-      </div>
-      <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end">
-        <StatsStrip stats={stats} />
+    <div className="mb-8 rounded-2xl border border-zinc-200/80 bg-[var(--surface)] p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-zinc-950/35 sm:p-8">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">
+            {dateLine}
+          </p>
+          <h1 className="mt-3 text-balance text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
+            Ve todos los lados de cada noticia
+          </h1>
+          <p className="mt-4 max-w-2xl text-pretty text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+            Agrupamos la misma historia desde varios medios españoles y mostramos
+            cómo se reparte la cobertura en el espectro editorial (referencia
+            orientativa).{" "}
+            <Link
+              href="/medios"
+              className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
+            >
+              Medios
+            </Link>{" "}
+            ·{" "}
+            <Link
+              href="/feed"
+              className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
+            >
+              Para ti
+            </Link>{" "}
+            ·{" "}
+            <Link
+              href="/angulo-muerto"
+              className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
+            >
+              Ángulo muerto
+            </Link>
+            .
+          </p>
+        </div>
+        <div className="flex w-full shrink-0 flex-col items-end gap-5 sm:gap-6 lg:w-auto">
+          <LogoMark size="pageHero" className="shrink-0" />
+          <StatsStrip stats={stats} />
+        </div>
       </div>
     </div>
   );

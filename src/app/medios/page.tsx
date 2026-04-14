@@ -30,7 +30,7 @@ export default async function MediosPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-3xl flex-1 px-4 py-16">
+      <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-16">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
           <p className="font-semibold">Error al cargar medios</p>
           <p className="mt-2 font-mono text-sm opacity-90">{error.message}</p>
@@ -46,13 +46,13 @@ export default async function MediosPage() {
   const list = medios ?? [];
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold uppercase tracking-[0.15em] text-emerald-700 dark:text-emerald-400">
             Catálogo
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
             Medios
           </h1>
           <p className="mt-2 max-w-2xl text-zinc-600 dark:text-zinc-400">

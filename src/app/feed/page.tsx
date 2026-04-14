@@ -18,6 +18,7 @@ import { HISTORIAS_PAGE_SIZE } from "@/lib/historias-page-size";
 import type { HistoriaRow } from "@/lib/types";
 import { sanitizeSearchInput } from "@/lib/search-sanitize";
 import { trendingTermsFromTitles } from "@/lib/trending-keywords";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import { createServerSupabaseOrNull } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
@@ -38,6 +39,7 @@ type PageProps = {
 };
 
 export default async function FeedPage({ searchParams }: PageProps) {
+  const base = getAppBaseUrl();
   const sp = await searchParams;
   const qRaw = typeof sp.q === "string" ? sp.q : "";
   const ventana =
@@ -58,7 +60,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
 
   if (!supabase) {
     return (
-      <main className="mx-auto max-w-3xl flex-1 px-4 py-16 text-center text-zinc-600">
+      <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-16 text-center text-zinc-600">
         Configura Supabase en <code>.env.local</code>.
       </main>
     );
@@ -82,9 +84,9 @@ export default async function FeedPage({ searchParams }: PageProps) {
 
   if (feedSlugs.length === 0) {
     return (
-      <main className="mx-auto max-w-2xl flex-1 px-4 py-10 sm:px-6 lg:max-w-3xl">
+      <main className="mx-auto max-w-2xl flex-1 overflow-x-clip px-4 py-10 sm:px-6 lg:max-w-3xl">
         <header className="mb-8">
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-balance text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
             Para ti
           </h1>
           <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -109,7 +111,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
     historiaIds = ids.slice(0, MAX_IN);
   } catch {
     return (
-      <main className="mx-auto max-w-3xl flex-1 px-4 py-16 text-center text-red-600">
+      <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-16 text-center text-red-600">
         Error al cargar tus historias.
       </main>
     );
@@ -117,7 +119,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
 
   if (historiaIds.length === 0) {
     return (
-      <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto max-w-5xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
         <FeedHeader feedSource={feedSource} slugs={feedSlugs} />
         <p className="mt-6 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40">
           No hay historias agrupadas aún para estos medios. Espera a la ingesta
@@ -143,7 +145,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
 
   if (historiaIdsFiltered.length === 0) {
     return (
-      <main className="mx-auto max-w-5xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto max-w-5xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
         <FeedHeader feedSource={feedSource} slugs={feedSlugs} />
         <p className="mt-6 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40">
           Ninguna historia de tus medios seguidos tiene cobertura con esa orientación.
@@ -196,7 +198,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-3xl flex-1 px-4 py-16 text-center">
+      <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-16 text-center">
         <p className="font-medium text-red-600">Error al cargar historias</p>
         <p className="mt-2 font-mono text-sm text-red-600/90">{error.message}</p>
       </main>
@@ -242,10 +244,10 @@ export default async function FeedPage({ searchParams }: PageProps) {
       : [null, rows];
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <FeedHeader feedSource={feedSource} slugs={feedSlugs} />
       <TrendingChips terms={trending} queryBase="/feed" />
-      <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-6 break-words text-sm text-zinc-500 dark:text-zinc-400">
         {feedSource === "auth"
           ? `Historias donde interviene al menos uno de tus medios (${feedSlugs.length} en tu cuenta).`
           : `Historias donde interviene al menos uno de tus medios (${feedSlugs.length} en la cookie de este navegador). `}
@@ -290,6 +292,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
                 coverageMix={coverageMixes.get(featured.id) ?? null}
                 layout="split"
                 size="featured"
+                shareUrl={`${base}/historia/${featured.id}`}
               />
             </div>
           ) : null}
@@ -301,6 +304,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
                   coverUrl={covers.get(h.id)}
                   coverageMix={coverageMixes.get(h.id) ?? null}
                   layout="split"
+                  shareUrl={`${base}/historia/${h.id}`}
                 />
               </li>
             ))}
@@ -325,12 +329,12 @@ function FeedHeader({
   feedSource: "auth" | "cookie" | "none";
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+      <div className="min-w-0">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
           Para ti
         </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 break-words text-sm text-zinc-500 dark:text-zinc-400">
           Medios seguidos: {slugs.length ? slugs.join(", ") : "—"}
         </p>
         {feedSource === "auth" ? (
@@ -345,7 +349,7 @@ function FeedHeader({
       </div>
       <Link
         href="/"
-        className="text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline dark:text-emerald-400"
+        className="inline-flex min-h-[44px] shrink-0 items-center text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline sm:min-h-0 dark:text-emerald-400"
       >
         ← Todas las historias
       </Link>

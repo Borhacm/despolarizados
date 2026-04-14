@@ -1,4 +1,5 @@
 import { CoverageMixBar } from "@/components/CoverageMixBar";
+import { StoryCardShareButton } from "@/components/StoryCardShareButton";
 import type { CoverageMix } from "@/lib/coverage-mix";
 import type { HistoriaRow } from "@/lib/types";
 import Link from "next/link";
@@ -53,6 +54,7 @@ export function StoryCard({
   layout = "stack",
   blindspotHint,
   size = "default",
+  shareUrl,
 }: {
   h: HistoriaRow;
   coverUrl?: string | null;
@@ -64,6 +66,8 @@ export function StoryCard({
   };
   /** Primera historia en portada (bloque grande tipo “Top news”). */
   size?: "default" | "featured";
+  /** URL absoluta de la historia (compartir desde la card). */
+  shareUrl: string;
 }) {
   const isFeatured = size === "featured";
   const isSplit = layout === "split";
@@ -92,7 +96,7 @@ export function StoryCard({
       : "line-clamp-3 text-lg font-semibold leading-snug text-zinc-900 group-hover:text-emerald-900 dark:text-zinc-50 dark:group-hover:text-emerald-200";
 
   const summaryClass =
-    "line-clamp-3 min-h-[4.25rem] text-sm leading-relaxed text-zinc-600 dark:text-zinc-400";
+    "line-clamp-3 min-h-0 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 sm:min-h-[4.25rem]";
 
   const mediaBlock =
     isSplit ? (
@@ -136,17 +140,15 @@ export function StoryCard({
     </span>
   );
 
-  const inner = (
-    <>
-      {isSplit ? (
-        <div className={splitLeftColClass}>
-          {mediaBlock}
-        </div>
-      ) : (
-        <>{mediaBlock}</>
-      )}
-      <div className={isSplit ? bodySplit : bodyStack}>
-        <div className="flex min-h-[1.25rem] flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+  const href = `/historia/${h.id}`;
+
+  const dateRow = (
+    <div className="flex min-h-[1.25rem] w-full min-w-0 items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="min-w-0 shrink">
+        <Link
+          href={href}
+          className="block min-w-0 hover:text-emerald-700 dark:hover:text-emerald-300"
+        >
           {h.ultima_pub ? (
             <time dateTime={h.ultima_pub}>{formatWhen(h.ultima_pub)}</time>
           ) : (
@@ -154,45 +156,110 @@ export function StoryCard({
               —
             </span>
           )}
-        </div>
-        {blindspotHint ? (
-          <p className="min-h-[1.25rem] text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-            Cobertura dominante: {skewLabelEs(blindspotHint.label)} (~
-            {blindspotHint.pct}%)
-          </p>
-        ) : null}
-        {isFeatured ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
-            Historia destacada
-          </p>
-        ) : null}
-        <h2 className={titleClass}>{h.titulo_canonico}</h2>
-        <p className={summaryClass}>
-          {h.resumen_canonico?.trim() ? h.resumen_canonico : "\u00A0"}
+        </Link>
+      </div>
+      <StoryCardShareButton
+        historiaId={h.id}
+        title={h.titulo_canonico}
+        shareUrl={shareUrl}
+      />
+    </div>
+  );
+
+  const mainBlock = (
+    <>
+      {blindspotHint ? (
+        <p className="min-h-[1.25rem] text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+          Cobertura dominante: {skewLabelEs(blindspotHint.label)} (~
+          {blindspotHint.pct}%)
         </p>
-        <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2">
-          <div className="flex min-w-0 shrink-0 items-center gap-2">
-            <span className="inline-flex items-center">{compareCta}</span>
-            <span className="inline-flex rounded-md border border-zinc-200/90 bg-zinc-50 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200">
-              {h.medio_count} medios · {h.article_count} artículos
-            </span>
-          </div>
-          {coverageMix ? (
-            <div
-              className={
-                isFeatured
-                  ? "min-w-0 flex-1 pl-1 sm:pl-2 max-w-[min(100%,15rem)] sm:max-w-[min(100%,17rem)] md:max-w-[min(100%,19rem)]"
-                  : "min-w-0 flex-1 basis-0 pl-1 sm:pl-2"
-              }
-            >
-              <CoverageMixBar
-                mix={coverageMix}
-                size="compact"
-                className="min-w-0 w-full"
-              />
-            </div>
-          ) : null}
+      ) : null}
+      {isFeatured ? (
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
+          Historia destacada
+        </p>
+      ) : null}
+      <h2 className={titleClass}>{h.titulo_canonico}</h2>
+      <p className={summaryClass}>
+        {h.resumen_canonico?.trim() ? h.resumen_canonico : "\u00A0"}
+      </p>
+      <div
+        className={
+          isFeatured
+            ? "flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-2"
+            : "flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2"
+        }
+      >
+        <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2">
+          <span className="inline-flex items-center">{compareCta}</span>
+          <span className="inline-flex rounded-md border border-zinc-200/90 bg-zinc-50 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200">
+            {h.medio_count} medios · {h.article_count} artículos
+          </span>
         </div>
+        {coverageMix ? (
+          <div
+            className={
+              isFeatured
+                ? "w-full min-w-0 sm:max-w-[min(100%,19rem)] sm:flex-1 sm:pl-1 md:max-w-[min(100%,21rem)]"
+                : "min-w-0 flex-1 basis-0 pl-1 sm:pl-2"
+            }
+          >
+            <CoverageMixBar
+              mix={coverageMix}
+              size={isFeatured ? "featured" : "compact"}
+              className="min-w-0 w-full"
+            />
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+
+  const outerClass =
+    layout === "split"
+      ? isFeatured
+        ? "flex w-full flex-col gap-0 px-5 py-3 sm:flex-row sm:items-center sm:justify-start sm:gap-5 sm:py-5 md:gap-6 md:px-10 md:py-6"
+        : "flex w-full flex-col gap-0 px-5 py-3 sm:min-h-[152px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:py-4"
+      : "block";
+
+  const inner = isSplit ? (
+    <>
+      <Link href={href} className={splitLeftColClass}>
+        {mediaBlock}
+      </Link>
+      <div className={bodySplit}>
+        {dateRow}
+        <Link
+          href={href}
+          className={
+            isFeatured
+              ? "flex min-h-0 min-w-0 flex-1 flex-col gap-3 sm:gap-4"
+              : "flex min-h-0 min-w-0 flex-1 flex-col gap-3"
+          }
+        >
+          {mainBlock}
+        </Link>
+      </div>
+    </>
+  ) : (
+    <>
+      {coverUrl ? (
+        <Link href={href} className="block">
+          {mediaBlock}
+        </Link>
+      ) : null}
+      <div className={bodyStack}>
+        {dateRow}
+        <Link
+          href={href}
+          className={
+            isFeatured
+              ? "flex flex-col gap-3 sm:gap-4"
+              : "flex flex-col gap-3"
+          }
+        >
+          {mainBlock}
+        </Link>
       </div>
     </>
   );
@@ -207,18 +274,7 @@ export function StoryCard({
             : "group overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm transition hover:border-emerald-200/90 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950/50 dark:hover:border-emerald-800/50"
       }
     >
-      <Link
-        href={`/historia/${h.id}`}
-        className={
-          layout === "split"
-            ? isFeatured
-              ? "flex w-full flex-col gap-0 px-5 py-3 sm:flex-row sm:items-center sm:justify-start sm:gap-5 sm:py-5 md:gap-6 md:px-10 md:py-6"
-              : "flex w-full flex-col gap-0 px-5 py-3 sm:min-h-[152px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:py-4"
-            : "block"
-        }
-      >
-        {inner}
-      </Link>
+      <div className={outerClass}>{inner}</div>
     </article>
   );
 }

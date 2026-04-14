@@ -109,7 +109,7 @@ export function ScrollSubscribeModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-4 pb-8 sm:items-center sm:p-6"
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6 sm:pb-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="newsletter-modal-title"
@@ -146,7 +146,7 @@ export function ScrollSubscribeModal() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none ring-emerald-500/0 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base text-zinc-900 outline-none ring-emerald-500/0 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 sm:text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
               placeholder="tu@correo.com"
               disabled={status === "loading"}
             />

@@ -8,11 +8,11 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto max-w-md flex-1 px-4 py-16 sm:px-6">
+    <main className="mx-auto max-w-md flex-1 overflow-x-clip px-4 py-12 sm:px-6 sm:py-16">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
         Cuenta
       </p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
         Entrar con correo
       </h1>
       <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">

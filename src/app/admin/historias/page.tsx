@@ -14,14 +14,14 @@ export default function AdminHistoriasPage() {
   const hasSecret = hasAdminSecretConfigured();
 
   return (
-    <main className="mx-auto max-w-3xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <Link
         href="/acceso-interno"
         className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300"
       >
         ← Acceso interno
       </Link>
-      <h1 className="mt-6 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
         Fusionar historias duplicadas
       </h1>
       <p className="mt-2 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">

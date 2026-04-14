@@ -15,14 +15,14 @@ export default function AdminMediosPage() {
   const hasSecret = hasAdminSecretConfigured();
 
   return (
-    <main className="mx-auto max-w-3xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <Link
         href="/medios"
         className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300"
       >
         ← Volver a medios
       </Link>
-      <h1 className="mt-6 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
         Añadir medio
       </h1>
       <p className="mt-2 max-w-xl text-sm text-zinc-600 dark:text-zinc-400">

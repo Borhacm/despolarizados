@@ -42,7 +42,7 @@ export function SeedMediosForm() {
             type="password"
             required
             autoComplete="off"
-            className="mt-2 w-full max-w-md rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-2 w-full max-w-md rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           />
         </div>
 
@@ -68,7 +68,7 @@ export function SeedMediosForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+          className="w-full min-h-[48px] rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60 sm:w-auto dark:bg-emerald-500 dark:hover:bg-emerald-400"
         >
           {isPending
             ? "Sincronizando…"

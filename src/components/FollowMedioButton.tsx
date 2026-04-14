@@ -73,7 +73,7 @@ export function FollowMedioButton({
       type="button"
       onClick={() => void toggle()}
       disabled={pending}
-      className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+      className={`w-full min-h-[48px] rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto sm:min-h-0 sm:py-2 ${
         following
           ? "border border-emerald-600 bg-emerald-50 text-emerald-950 hover:bg-emerald-100/90 dark:border-emerald-500 dark:bg-emerald-950/45 dark:text-emerald-100"
           : "border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"

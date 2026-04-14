@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ADMIN_HUB_PATH } from "@/lib/admin-hub";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { ReactNode } from "react";
+import { LogoMark } from "@/components/LogoMark";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -57,7 +58,7 @@ function NavAuth({ userEmail }: { userEmail: string | null }) {
           type="button"
           onClick={() => void logout()}
           disabled={pending}
-          className="rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 sm:min-h-0 sm:min-w-0"
         >
           {pending ? "…" : "Salir"}
         </button>
@@ -68,7 +69,7 @@ function NavAuth({ userEmail }: { userEmail: string | null }) {
   return (
     <Link
       href="/login"
-      className="inline-flex rounded-lg p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 sm:min-h-0 sm:min-w-0"
       aria-label="Iniciar sesión"
       title="Iniciar sesión"
     >
@@ -112,27 +113,51 @@ export function Nav({ userEmail = null }: { userEmail?: string | null }) {
   }, [router]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200/90 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/90 dark:shadow-[0_1px_0_rgba(0,0,0,0.35)]">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href="/" className="group flex min-w-0 items-start">
-          <span className="min-w-0">
-            <span className="block truncate bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-700 bg-clip-text text-xl font-extrabold tracking-tight text-transparent dark:from-zinc-50 dark:via-zinc-100 dark:to-zinc-300">
-              Despolarizados
+    <header className="sticky top-0 z-50 border-b border-zinc-200/90 bg-white/90 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/90 dark:shadow-[0_1px_0_rgba(0,0,0,0.35)]">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="group flex min-w-0 items-center gap-2.5 sm:gap-3.5"
+          >
+            <LogoMark
+              size="nav"
+              className="!h-9 !w-9 sm:!h-12 sm:!w-12"
+            />
+            <span className="min-w-0">
+              <span className="block truncate bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-700 bg-clip-text text-lg font-extrabold tracking-tight text-transparent dark:from-zinc-50 dark:via-zinc-100 dark:to-zinc-300 sm:text-xl">
+                Despolarizados
+              </span>
+              <span className="mt-1 hidden max-w-[min(100%,20rem)] text-pretty text-sm font-medium leading-snug text-zinc-500 dark:text-zinc-400 sm:block">
+                Agregador de noticias para evitar sesgos
+              </span>
             </span>
-            <span className="mt-1 block max-w-[min(100%,20rem)] text-pretty text-sm font-medium leading-snug text-zinc-500 dark:text-zinc-400">
-              Noticias para evitar sesgos
-            </span>
-          </span>
-        </Link>
-        <nav className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 sm:gap-1">
-          {navItems.map((item) => (
-            <NavLink key={item.href} href={item.href} active={item.match(pathname)}>
-              {item.label}
-            </NavLink>
-          ))}
-          <NavAuth userEmail={userEmail} />
-          <ThemeToggle />
-        </nav>
+          </Link>
+          <div className="flex shrink-0 items-center gap-0.5 sm:hidden">
+            <NavAuth userEmail={userEmail} />
+            <ThemeToggle />
+          </div>
+        </div>
+        <div className="flex min-w-0 items-center gap-2 sm:justify-end sm:gap-1">
+          <nav
+            className="flex min-h-[2.75rem] min-w-0 flex-1 flex-nowrap items-center gap-0.5 overflow-x-auto overscroll-x-contain pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] sm:min-h-0 sm:flex-initial sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden"
+            aria-label="Principal"
+          >
+            {navItems.map((item) => (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                active={item.match(pathname)}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
+            <NavAuth userEmail={userEmail} />
+            <ThemeToggle />
+          </div>
+        </div>
       </div>
     </header>
   );
@@ -152,8 +177,8 @@ function NavLink({
       href={href}
       className={
         active
-          ? "rounded-lg bg-emerald-50 px-2.5 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800/80"
-          : "rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          ? "shrink-0 rounded-lg bg-emerald-50 px-2.5 py-2 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800/80"
+          : "shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
       }
       aria-current={active ? "page" : undefined}
     >

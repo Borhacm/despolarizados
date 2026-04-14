@@ -10,8 +10,8 @@ export function CoverageMixBar({
 }: {
   mix: CoverageMix;
   className?: string;
-  /** `compact`: listados; el ancho lo define el contenedor (`w-full`). */
-  size?: "default" | "compact";
+  /** `compact`: listados; `featured`: portada (móvil: barra más alta y legible). */
+  size?: "default" | "compact" | "featured";
 }) {
   const { izqPct, centroPct, derPct, izq, centro, der } = mix;
   const n = izq + centro + der;
@@ -19,7 +19,9 @@ export function CoverageMixBar({
   const text =
     size === "compact"
       ? "text-[10px] leading-tight"
-      : "text-[11px] leading-tight";
+      : size === "featured"
+        ? "text-xs leading-snug sm:text-[11px] sm:leading-tight"
+        : "text-[11px] leading-tight";
 
   const round = (x: number) => Math.round(x);
 
@@ -27,12 +29,16 @@ export function CoverageMixBar({
 
   const listWrap = "w-full min-w-0";
 
+  const trackClass =
+    size === "featured"
+      ? "relative h-4 w-full overflow-hidden rounded-full bg-zinc-200 ring-1 ring-inset ring-zinc-400/35 dark:bg-zinc-800 dark:ring-zinc-500/40 sm:h-3 sm:ring-0"
+      : "relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/90 dark:bg-zinc-800/90";
+
   return (
-    <div className={`space-y-1 ${listWrap} ${className}`}>
-      <div
-        className="relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/90 dark:bg-zinc-800/90"
-        title={titleBar}
-      >
+    <div
+      className={`${size === "featured" ? "space-y-1.5 sm:space-y-1" : "space-y-1"} ${listWrap} ${className}`}
+    >
+      <div className={trackClass} title={titleBar}>
         {viz.left ? (
           <div
             className="absolute inset-y-0 z-[2] bg-rose-500/90 dark:bg-rose-600/90"
@@ -64,19 +70,19 @@ export function CoverageMixBar({
       <div
         className={`flex w-full flex-wrap justify-between gap-x-1 gap-y-0.5 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 ${text}`}
       >
-        <span>
+        <span className={size === "featured" ? "min-w-0" : undefined}>
           Izq{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(izqPct)}%
           </span>
         </span>
-        <span>
+        <span className={size === "featured" ? "min-w-0" : undefined}>
           Centro{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(centroPct)}%
           </span>
         </span>
-        <span>
+        <span className={size === "featured" ? "min-w-0" : undefined}>
           Der{" "}
           <span className="text-zinc-700 dark:text-zinc-300">
             {round(derPct)}%
