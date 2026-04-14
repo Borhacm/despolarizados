@@ -129,8 +129,9 @@ export function StoryCard({
       </div>
     ) : null;
 
+  /** En destacada, desde `sm:flex-row` hay que acotar el ancho de la foto; si sigue `w-full`, el texto queda con 0px hasta `md`. */
   const splitLeftColClass = isFeatured
-    ? "flex w-full shrink-0 flex-col gap-2 md:w-[46%]"
+    ? "flex w-full shrink-0 flex-col gap-2 sm:w-[46%] sm:max-w-[min(100%,28rem)]"
     : "flex w-full shrink-0 flex-col gap-2 sm:w-56 md:w-64";
 
   const compareCta = (

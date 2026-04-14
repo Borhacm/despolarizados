@@ -1,37 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 /**
- * Miniatura de la imagen OG del servidor (misma ruta que crawlers).
- * Usa ruta relativa si el enlace canónico coincide con el origen actual.
+ * Miniatura de la imagen OG de esta app. Ruta relativa = mismo origen que la página.
  */
 export function HistoriaShareOgPreview({
   historiaId,
   canonicalUrl,
 }: {
   historiaId: string;
+  /** Compatibilidad con llamadas existentes; la miniatura usa siempre el origen actual. */
   canonicalUrl: string;
 }) {
+  void canonicalUrl;
+  const src = `/historia/${historiaId}/opengraph-image`;
   const [status, setStatus] = useState<"loading" | "ok" | "err">("loading");
-
-  const src = useMemo(() => {
-    const path = `/historia/${historiaId}/opengraph-image`;
-    if (typeof window === "undefined") {
-      try {
-        return new URL(path, canonicalUrl).toString();
-      } catch {
-        return path;
-      }
-    }
-    try {
-      const o = new URL(canonicalUrl).origin;
-      if (o === window.location.origin) return path;
-      return `${o}${path}`;
-    } catch {
-      return path;
-    }
-  }, [canonicalUrl, historiaId]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200/90 bg-zinc-100/50 dark:border-zinc-700 dark:bg-zinc-900/50">
@@ -44,7 +28,8 @@ export function HistoriaShareOgPreview({
         ) : null}
         {status === "err" ? (
           <div className="absolute inset-0 z-[1] flex items-center justify-center px-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
-            No se pudo cargar la vista previa. Usa “Obtener PNG” debajo.
+            No se pudo cargar la vista previa. Prueba “Imagen vista previa” o
+            recarga la página.
           </div>
         ) : null}
         {status !== "err" ? (
@@ -52,9 +37,12 @@ export function HistoriaShareOgPreview({
           <img
             src={src}
             alt=""
-            className={`aspect-[1200/630] h-full w-full object-cover ${status === "loading" ? "opacity-0" : "opacity-100"}`}
+            className={`relative z-0 aspect-[1200/630] h-full w-full object-cover object-center ${
+              status === "loading" ? "opacity-0" : "opacity-100"
+            }`}
             loading="eager"
             decoding="async"
+            referrerPolicy="no-referrer"
             onLoad={() => setStatus("ok")}
             onError={() => setStatus("err")}
           />
