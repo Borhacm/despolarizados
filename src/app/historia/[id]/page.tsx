@@ -212,72 +212,122 @@ export default async function HistoriaPage(props: PageProps) {
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
           Medios ordenados en el espectro (izq. → der.)
         </h2>
-        <p className="mb-2 text-xs text-zinc-500 sm:hidden dark:text-zinc-400">
-          Desliza horizontalmente para ver todas las columnas.
+        <p className="mb-3 text-xs text-zinc-500 sm:hidden dark:text-zinc-400">
+          Una tarjeta por medio; el orden sigue el espectro editorial.
         </p>
-        <div className="relative overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
+        <p className="mb-2 hidden text-xs text-zinc-500 sm:block lg:hidden dark:text-zinc-400">
+          Si no ves todas las columnas, desplaza la tabla horizontalmente.
+        </p>
+
+        <ul className="mb-0 space-y-3 sm:hidden">
+          {artsBySpectrum.map((a) => {
+            const m = medioMap.get(a.medio_id);
+            return (
+              <li
+                key={a.id}
+                className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/50"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2 gap-y-1">
+                  <div className="min-w-0">
+                    {m?.slug ? (
+                      <Link
+                        href={`/medios/${m.slug}`}
+                        className="font-semibold text-zinc-900 hover:text-emerald-800 hover:underline dark:text-zinc-100 dark:hover:text-emerald-300"
+                      >
+                        {m?.nombre ?? "—"}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {m?.nombre ?? "—"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    {m?.sesgo ? <SesgoPill sesgo={m.sesgo} /> : null}
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {m?.sesgo ?? "—"}
+                    </span>
+                  </div>
+                </div>
+                <a
+                  href={a.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 block break-words text-sm font-medium text-emerald-800 underline-offset-2 hover:underline dark:text-emerald-200"
+                >
+                  {a.titulo}
+                </a>
+                <p className="mt-2 text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                  {formatDateTimeEs(a.fecha_pub)}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="relative hidden overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm sm:block dark:border-zinc-800 dark:bg-zinc-950/40">
           <div
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 rounded-l-2xl bg-gradient-to-r from-white to-transparent dark:from-zinc-950 sm:hidden"
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 rounded-l-2xl bg-gradient-to-r from-white to-transparent dark:from-zinc-950 lg:hidden"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 rounded-r-2xl bg-gradient-to-l from-white to-transparent dark:from-zinc-950 sm:hidden"
+            className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 rounded-r-2xl bg-gradient-to-l from-white to-transparent dark:from-zinc-950 lg:hidden"
             aria-hidden
           />
           <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
             <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50/90 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
-              <tr>
-                <th className="px-4 py-3">Medio</th>
-                <th className="px-4 py-3">Espectro</th>
-                <th className="px-4 py-3">Titular</th>
-                <th className="px-4 py-3">Publicación</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {artsBySpectrum.map((a) => {
-                const m = medioMap.get(a.medio_id);
-                return (
-                  <tr key={a.id} className="bg-white dark:bg-zinc-950/20">
-                    <td className="px-4 py-3">
-                      {m?.slug ? (
-                        <Link
-                          href={`/medios/${m.slug}`}
-                          className="font-semibold text-zinc-900 hover:text-emerald-800 hover:underline dark:text-zinc-100 dark:hover:text-emerald-300"
+              <thead className="border-b border-zinc-200 bg-zinc-50/90 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+                <tr>
+                  <th className="px-4 py-3">Medio</th>
+                  <th className="px-4 py-3">Espectro</th>
+                  <th className="px-4 py-3">Titular</th>
+                  <th className="px-4 py-3">Publicación</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {artsBySpectrum.map((a) => {
+                  const m = medioMap.get(a.medio_id);
+                  return (
+                    <tr key={a.id} className="bg-white dark:bg-zinc-950/20">
+                      <td className="px-4 py-3">
+                        {m?.slug ? (
+                          <Link
+                            href={`/medios/${m.slug}`}
+                            className="font-semibold text-zinc-900 hover:text-emerald-800 hover:underline dark:text-zinc-100 dark:hover:text-emerald-300"
+                          >
+                            {m.nombre}
+                          </Link>
+                        ) : (
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            {m?.nombre ?? "—"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                          {m?.sesgo ? <SesgoPill sesgo={m.sesgo} /> : null}
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {m?.sesgo ?? "—"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={a.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-emerald-800 hover:underline dark:text-emerald-200"
                         >
-                          {m.nombre}
-                        </Link>
-                      ) : (
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                          {m?.nombre ?? "—"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                        {m?.sesgo ? <SesgoPill sesgo={m.sesgo} /> : null}
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {m?.sesgo ?? "—"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <a
-                        href={a.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-emerald-800 hover:underline dark:text-emerald-200"
-                      >
-                        {a.titulo}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                      {formatDateTimeEs(a.fecha_pub)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
+                          {a.titulo}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
+                        {formatDateTimeEs(a.fecha_pub)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
         </div>

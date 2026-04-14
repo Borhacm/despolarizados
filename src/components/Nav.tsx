@@ -128,6 +128,9 @@ export function Nav({ userEmail = null }: { userEmail?: string | null }) {
               <span className="block truncate bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-700 bg-clip-text text-lg font-extrabold tracking-tight text-transparent dark:from-zinc-50 dark:via-zinc-100 dark:to-zinc-300 sm:text-xl">
                 Despolarizados
               </span>
+              <span className="mt-0.5 block text-xs font-medium leading-snug text-zinc-500 sm:hidden dark:text-zinc-400">
+                Noticias con contexto
+              </span>
               <span className="mt-1 hidden max-w-[min(100%,20rem)] text-pretty text-sm font-medium leading-snug text-zinc-500 dark:text-zinc-400 sm:block">
                 Agregador de noticias para evitar sesgos
               </span>
