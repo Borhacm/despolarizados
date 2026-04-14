@@ -33,10 +33,10 @@ export default function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#f3f3f5] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+      <body className="min-h-full flex flex-col bg-[var(--background)] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
         <Nav />
         {children}
-        <footer className="mt-auto border-t border-zinc-200/80 bg-white/60 py-8 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/60">
+        <footer className="mt-auto border-t border-zinc-200/80 bg-white/70 py-8 text-center text-xs text-zinc-500 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/70">
           <p>
             Las etiquetas de sesgo son orientativas para la UI. MVP técnico —
             valida fuentes y términos legales antes de producción.
@@ -44,13 +44,13 @@ export default function RootLayout({
           <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             <Link
               href="/admin/ingesta"
-              className="text-zinc-600 underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              className="text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-emerald-800 dark:text-zinc-400 dark:decoration-zinc-600 dark:hover:text-emerald-300"
             >
               Ingesta (admin)
             </Link>
             <Link
               href="/admin/medios"
-              className="text-zinc-600 underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              className="text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-emerald-800 dark:text-zinc-400 dark:decoration-zinc-600 dark:hover:text-emerald-300"
             >
               Añadir medio (admin)
             </Link>

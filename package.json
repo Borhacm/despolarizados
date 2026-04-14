@@ -9,7 +9,8 @@
     "lint": "eslint",
     "ingest": "node --import tsx scripts/run-ingest.ts",
     "db:count": "node --import tsx scripts/db-count.ts",
-    "backfill:dates": "node --import tsx scripts/backfill-ultima-pub.ts"
+    "backfill:dates": "node --import tsx scripts/backfill-ultima-pub.ts",
+    "seed:medios": "node --import tsx scripts/seed-medios.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",

@@ -186,14 +186,14 @@ export default async function Home({ searchParams }: PageProps) {
       .from("historias")
       .select("titulo_canonico")
       .order("importancia", { ascending: false })
-      .limit(40),
+      .limit(80),
     fetchCoverImagesByHistoriaIds(supabase, ids),
     fetchCoverageMixByHistoriaIds(supabase, ids),
   ]);
 
   const trending = trendingKeywordsFromTitles(
     (trendTitulos ?? []).map((r) => r.titulo_canonico as string),
-    12,
+    10,
   );
 
   const paginationQuery: Record<string, string> = {};
@@ -202,11 +202,23 @@ export default async function Home({ searchParams }: PageProps) {
   if (ventana && ventana !== "all") paginationQuery.ventana = ventana;
   if (orden === "reciente") paginationQuery.orden = "reciente";
 
+  const showFeaturedBlock =
+    page === 1 &&
+    !q.trim() &&
+    !medioSlug &&
+    ventana === "all" &&
+    rows.length > 0;
+
+  const [featured, rest] =
+    showFeaturedBlock && rows.length > 0
+      ? [rows[0], rows.slice(1)]
+      : [null, rows];
+
   return (
     <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
       <HomeHeader stats={stats} />
       <TrendingChips terms={trending} />
-      <div className="mb-2">
+      <div className="mb-2 border-l-2 border-emerald-500 pl-3 dark:border-emerald-500/80">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
           Historias del momento
         </h2>
@@ -229,8 +241,19 @@ export default async function Home({ searchParams }: PageProps) {
         )
       ) : (
         <>
+          {featured ? (
+            <div className="mb-8">
+              <StoryCard
+                h={featured}
+                coverUrl={covers.get(featured.id)}
+                coverageMix={coverageMixes.get(featured.id) ?? null}
+                layout="split"
+                size="featured"
+              />
+            </div>
+          ) : null}
           <ul className="space-y-5">
-            {rows.map((h) => (
+            {rest.map((h) => (
               <li key={h.id}>
                 <StoryCard
                   h={h}
@@ -261,9 +284,9 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
   }).format(new Date());
 
   return (
-    <div className="mb-8 flex flex-col gap-6 border-b border-zinc-200/90 pb-10 dark:border-zinc-800 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mb-8 flex flex-col gap-6 rounded-2xl border border-zinc-200/80 bg-[var(--surface)] p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-zinc-950/35 sm:p-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-600 dark:text-violet-400">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">
           {dateLine}
         </p>
         <h1 className="mt-3 text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
@@ -275,21 +298,21 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
           orientativa).{" "}
           <Link
             href="/medios"
-            className="font-semibold text-violet-700 underline decoration-violet-300 underline-offset-2 hover:text-violet-900 dark:text-violet-300 dark:hover:text-violet-200"
+            className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
           >
             Fuentes
           </Link>{" "}
           ·{" "}
           <Link
             href="/feed"
-            className="font-semibold text-violet-700 underline decoration-violet-300 underline-offset-2 hover:text-violet-900 dark:text-violet-300 dark:hover:text-violet-200"
+            className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
           >
             Para ti
           </Link>{" "}
           ·{" "}
           <Link
             href="/angulo-muerto"
-            className="font-semibold text-violet-700 underline decoration-violet-300 underline-offset-2 hover:text-violet-900 dark:text-violet-300 dark:hover:text-violet-200"
+            className="font-semibold text-emerald-700 underline decoration-emerald-300/80 underline-offset-[3px] transition hover:text-emerald-900 hover:decoration-emerald-500 dark:text-emerald-400 dark:decoration-emerald-700 dark:hover:text-emerald-300"
           >
             Ángulo muerto
           </Link>
@@ -298,12 +321,12 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
       </div>
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end">
         <StatsStrip stats={stats} />
-        <div className="max-w-xs rounded-xl border border-dashed border-zinc-300 bg-white/90 px-4 py-3 text-xs text-zinc-600 shadow-sm dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400">
+        <div className="max-w-xs rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 px-4 py-3 text-xs leading-relaxed text-zinc-600 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
           Ingesta sin OpenAI: modo <code className="font-mono">lexical</code> por
           defecto.{" "}
           <Link
             href="/admin/ingesta"
-            className="font-medium text-violet-700 underline dark:text-violet-300"
+            className="font-medium text-emerald-700 underline decoration-emerald-300/70 underline-offset-2 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
           >
             Admin
           </Link>

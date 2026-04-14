@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
+/* Inspiración Ground News: fondo neutro frío, acento verde, alto contraste tipográfico */
 :root {
-  --background: #f3f3f5;
-  --foreground: #18181b;
+  --background: #e8eaed;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --accent: #059669;
+  --accent-muted: #ecfdf5;
+  --border-subtle: rgba(15, 23, 42, 0.08);
 }
 
 @theme inline {
@@ -16,6 +21,10 @@
   :root {
     --background: #09090b;
     --foreground: #fafafa;
+    --surface: #18181b;
+    --accent: #34d399;
+    --accent-muted: rgba(16, 185, 129, 0.12);
+    --border-subtle: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -27,4 +36,8 @@ body {
 
 a {
   text-underline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
 }
