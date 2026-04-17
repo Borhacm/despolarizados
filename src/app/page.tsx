@@ -95,19 +95,20 @@ export default async function Home({ searchParams }: PageProps) {
       </main>
     );
   }
+  const supabaseClient = supabase;
 
   const [{ data: mediosOpts }, stats] = await Promise.all([
-    supabase
+    supabaseClient
       .from("medios")
       .select("slug, nombre")
       .eq("active", true)
       .order("nombre"),
-    fetchCatalogStats(supabase),
+    fetchCatalogStats(supabaseClient),
   ]);
 
   let historiaIdsMedio: string[] | null = null;
   if (medioSlug) {
-    const { data: med } = await supabase
+    const { data: med } = await supabaseClient
       .from("medios")
       .select("id")
       .eq("slug", medioSlug)
@@ -115,7 +116,7 @@ export default async function Home({ searchParams }: PageProps) {
     if (!med?.id) {
       historiaIdsMedio = [];
     } else {
-      const { data: arts } = await supabase
+      const { data: arts } = await supabaseClient
         .from("articulos")
         .select("historia_id")
         .eq("medio_id", med.id);
@@ -199,7 +200,7 @@ export default async function Home({ searchParams }: PageProps) {
     searchTerm: q,
   };
 
-  let listQuery = buildHistoriasSelect(supabase, {
+  let listQuery = buildHistoriasSelect(supabaseClient, {
     ...filterBase,
     searchMode: "fts",
   });
@@ -208,7 +209,7 @@ export default async function Home({ searchParams }: PageProps) {
   let hasMore = false;
 
   async function runQuery(searchMode: "fts" | "ilike") {
-    listQuery = buildHistoriasSelect(supabase, {
+    listQuery = buildHistoriasSelect(supabaseClient, {
       ...filterBase,
       searchMode,
     });
@@ -265,13 +266,13 @@ export default async function Home({ searchParams }: PageProps) {
 
   const ids = rows.map((r) => r.id);
   const [{ data: trendTitulos }, covers, coverageMixes] = await Promise.all([
-    supabase
+    supabaseClient
       .from("historias")
       .select("titulo_canonico")
       .order("importancia", { ascending: false })
       .limit(120),
-    fetchCoverImagesByHistoriaIds(supabase, ids),
-    fetchCoverageMixByHistoriaIds(supabase, ids),
+    fetchCoverImagesByHistoriaIds(supabaseClient, ids),
+    fetchCoverageMixByHistoriaIds(supabaseClient, ids),
   ]);
 
   const trending = trendingTermsFromTitles(
