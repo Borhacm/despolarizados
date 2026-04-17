@@ -86,6 +86,59 @@ Alternativa programática: `POST /api/medios` con `Authorization: Bearer CRON_SE
    
    Así se reparten los feeds entre 4 ejecuciones para evitar timeout en una sola corrida. `Authorization: Bearer CRON_SECRET` debe coincidir con la variable en el proyecto. [Cron Jobs en Vercel](https://vercel.com/docs/cron-jobs).
 
+### 8. Boletín diario automático (suscriptores)
+
+1. Ejecuta la migración `supabase/migrations/20260417000000_newsletter.sql` para crear `newsletter_subscribers`.
+2. En local y en Vercel configura:
+   - `RESEND_API_KEY`
+   - `NEWSLETTER_FROM_EMAIL` (remitente verificado en Resend)
+   - `CRON_SECRET`
+   - `NEXT_PUBLIC_APP_URL` (si no usas `VERCEL_URL`, para enlaces de verificar/baja)
+3. `vercel.json` ya incluye el cron diario:
+   - `/api/cron/newsletter-digest` a las **15:30 UTC** (después del último cron de ingesta de las 15:00 UTC).
+4. Prueba manual del envío (con servidor en marcha):
+
+```bash
+curl -sS -H "Authorization: Bearer TU_CRON_SECRET" \
+  "http://localhost:3000/api/cron/newsletter-digest"
+```
+
+La respuesta devuelve `sent`, `skipped` y posibles `errors` por suscriptor.
+
+### 9. Publicación automática en Instagram (3 bloques)
+
+El proyecto incluye un cron que publica una pieza en Instagram con 3 bloques:
+- `IZQUIERDA`
+- `CENTRO`
+- `DERECHA`
+
+Cada bloque se etiqueta automáticamente como:
+- `ANGULO MUERTO` si la cobertura dominante de ese lado es >= 68%
+- `SESGO` en caso contrario
+
+Configuración:
+1. Cuenta de Instagram Business/Creator conectada a Meta Graph API.
+2. Variables en local/Vercel:
+   - `IG_GRAPH_ACCESS_TOKEN`
+   - `IG_GRAPH_USER_ID`
+   - `CRON_SECRET`
+3. `vercel.json` incluye el cron:
+   - `/api/cron/instagram-brief` a las **15:45 UTC**.
+
+Prueba manual (sin publicar, para inspeccionar caption y bloques):
+
+```bash
+curl -sS -H "Authorization: Bearer TU_CRON_SECRET" \
+  "http://localhost:3000/api/cron/instagram-brief?dryRun=1"
+```
+
+Publicación real:
+
+```bash
+curl -sS -H "Authorization: Bearer TU_CRON_SECRET" \
+  "http://localhost:3000/api/cron/instagram-brief"
+```
+
 ---
 
 ## Requisitos técnicos
