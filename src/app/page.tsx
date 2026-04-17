@@ -57,6 +57,12 @@ export default async function Home({ searchParams }: PageProps) {
     typeof sp.orientacion === "string" ? sp.orientacion.trim() : "";
   const orientacion = parseOrientacionFiltro(orientacionRaw);
 
+  const filtersActive =
+    q.trim() !== "" ||
+    medioSlug !== "" ||
+    ventana !== "all" ||
+    orientacion !== "";
+
   if (!supabase) {
     return (
       <main className="mx-auto max-w-3xl flex-1 overflow-x-clip px-4 py-16 text-center">
@@ -130,6 +136,8 @@ export default async function Home({ searchParams }: PageProps) {
           medios={mediosOpts ?? []}
           title="Historias del momento"
           subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
+          collapsible
+          defaultOpen={filtersActive}
         />
         <p className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
           No hay historias con ese medio o el medio no existe.
@@ -166,6 +174,8 @@ export default async function Home({ searchParams }: PageProps) {
           medios={mediosOpts ?? []}
           title="Historias del momento"
           subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
+          collapsible
+          defaultOpen={filtersActive}
         />
         <p className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
           No hay historias con cobertura de esa orientación (con los filtros
@@ -259,7 +269,7 @@ export default async function Home({ searchParams }: PageProps) {
   return (
     <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <HomeHeader stats={stats} />
-      <TrendingChips terms={trending} />
+      <TrendingChips terms={trending} collapsible defaultOpen={false} />
       <div className="relative isolate">
         <div
           className="pointer-events-none absolute -right-6 top-0 z-0 select-none sm:-right-10 sm:top-4 md:top-8"
@@ -280,6 +290,8 @@ export default async function Home({ searchParams }: PageProps) {
               medios={mediosOpts ?? []}
               title="Historias del momento"
               subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
+              collapsible
+              defaultOpen={filtersActive}
             />
           </div>
 
@@ -340,6 +352,9 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
   return (
     <div className="mb-8 rounded-2xl border border-zinc-200/80 bg-[var(--surface)] p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-zinc-950/35 sm:p-8">
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+        <div className="flex justify-center lg:hidden">
+          <LogoMark size="pageHero" className="shrink-0" />
+        </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">
             {dateLine}
@@ -375,7 +390,9 @@ function HomeHeader({ stats }: { stats: CatalogStats }) {
           </p>
         </div>
         <div className="flex w-full shrink-0 flex-col items-end gap-5 sm:gap-6 lg:w-auto">
-          <LogoMark size="pageHero" className="shrink-0" />
+          <div className="hidden lg:block">
+            <LogoMark size="pageHero" className="shrink-0" />
+          </div>
           <StatsStrip stats={stats} />
         </div>
       </div>

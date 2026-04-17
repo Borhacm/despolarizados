@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 /**
- * Miniatura de la imagen OG de esta app. Ruta relativa = mismo origen que la página.
+ * Miniatura OG: siempre misma origen que la página (`/historia/.../opengraph-image`).
+ * No usar `NEXT_PUBLIC_APP_URL` aquí: si apunta a otro host, la petición de imagen falla
+ * en previews/modales y el mensaje de error era engañoso.
  */
 export function HistoriaShareOgPreview({
   historiaId,
-  canonicalUrl,
+  canonicalUrl: _canonicalUrl,
 }: {
   historiaId: string;
-  /** Compatibilidad con llamadas existentes; la miniatura usa siempre el origen actual. */
   canonicalUrl: string;
 }) {
-  void canonicalUrl;
-  const src = `/historia/${historiaId}/opengraph-image`;
+  void _canonicalUrl;
   const [status, setStatus] = useState<"loading" | "ok" | "err">("loading");
+
+  const src = useMemo(
+    () => `/historia/${historiaId}/opengraph-image`,
+    [historiaId],
+  );
 
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200/90 bg-zinc-100/50 dark:border-zinc-700 dark:bg-zinc-900/50">
@@ -27,14 +32,18 @@ export function HistoriaShareOgPreview({
           />
         ) : null}
         {status === "err" ? (
-          <div className="absolute inset-0 z-[1] flex items-center justify-center px-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
-            No se pudo cargar la vista previa. Prueba “Imagen vista previa” o
-            recarga la página.
+          <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-1 px-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+            <span>No se pudo cargar la vista previa.</span>
+            <span className="text-[10px] text-zinc-400">
+              Recarga la página o prueba “Imagen vista previa” más abajo. Si sigue
+              fallando, revisa la configuración del servidor (p. ej. Supabase).
+            </span>
           </div>
         ) : null}
         {status !== "err" ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
+            key={src}
             src={src}
             alt=""
             className={`relative z-0 aspect-[1200/630] h-full w-full object-cover object-center ${
@@ -48,9 +57,6 @@ export function HistoriaShareOgPreview({
           />
         ) : null}
       </div>
-      <p className="border-t border-zinc-200/80 px-3 py-2 text-[11px] leading-snug text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-        Vista previa al compartir el enlace (Open Graph).
-      </p>
     </div>
   );
 }

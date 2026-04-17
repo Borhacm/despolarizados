@@ -5,6 +5,11 @@ import { SesgoPill } from "@/components/SesgoPill";
 import { getAppBaseUrl } from "@/lib/app-base-url";
 import { coverageMixFromSesgos } from "@/lib/coverage-mix";
 import { fetchHistoriaShareFields } from "@/lib/historia-share";
+import {
+  historiaDocumentTitleShort,
+  historiaOgOpenGraphDescription,
+  historiaOgOpenGraphTitle,
+} from "@/lib/share/historia-og-metadata-text";
 import { formatDateTimeEs } from "@/lib/format";
 import { createPublicClient } from "@/lib/supabase/public";
 import { sesgoToPosition } from "@/lib/sesgo";
@@ -38,13 +43,17 @@ export async function generateMetadata({
       alternates: { canonical },
     };
   }
-  const t = fields.titulo_canonico;
-  const short = t.length > 58 ? `${t.slice(0, 55)}…` : t;
-  const desc =
-    fields.resumen_canonico?.slice(0, 160) ??
-    `Comparativa de medios: ${fields.medio_count} medios, ${fields.article_count} artículos.`;
+  const t = historiaOgOpenGraphTitle(fields.titulo_canonico);
+  const short = historiaDocumentTitleShort(fields.titulo_canonico);
+  const desc = historiaOgOpenGraphDescription(fields);
 
-  const ogImagePath = `/historia/${id}/opengraph-image`;
+  /** Absolutas: LinkedIn/Facebook/WhatsApp resuelven mejor og:image y og:url. */
+  const ogImageUrl = `${base}/historia/${id}/opengraph-image`;
+
+  /** Vista previa “rica” (imagen grande + titular + texto): WhatsApp usa estos OG tags como Facebook. */
+  const publishedTime = fields.ultima_pub
+    ? new Date(fields.ultima_pub).toISOString()
+    : undefined;
 
   return {
     title: short,
@@ -58,12 +67,16 @@ export async function generateMetadata({
       siteName: "Despolarizados",
       locale: "es_ES",
       type: "article",
+      publishedTime,
+      modifiedTime: publishedTime,
+      section: "Comparativa de medios",
       images: [
         {
-          url: ogImagePath,
+          url: ogImageUrl,
           width: 1200,
           height: 630,
           alt: t,
+          type: "image/png",
         },
       ],
     },
@@ -71,7 +84,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: t,
       description: desc,
-      images: [ogImagePath],
+      images: [ogImageUrl],
     },
   };
 }
@@ -181,12 +194,6 @@ export default async function HistoriaPage(props: PageProps) {
               title={historia.titulo_canonico}
               shareUrl={shareUrl}
               alignEnd={false}
-              visual={{
-                coverImageUrl: heroImage ?? null,
-                mix: coverageMix,
-                medioCount: historia.medio_count,
-                articleCount: historia.article_count,
-              }}
             />
           </div>
           {heroImage ? (

@@ -54,6 +54,9 @@ export default async function FeedPage({ searchParams }: PageProps) {
     typeof sp.orientacion === "string" ? sp.orientacion.trim() : "";
   const orientacion = parseOrientacionFiltro(orientacionRaw);
 
+  const feedFiltersActive =
+    q.trim() !== "" || ventana !== "all" || orientacion !== "";
+
   const supabase = await createServerSupabaseOrNull();
   const jar = await cookies();
   const raw = jar.get(FEED_COOKIE)?.value ?? "";
@@ -163,6 +166,8 @@ export default async function FeedPage({ searchParams }: PageProps) {
             clearHref="/feed"
             title="Filtrar historias"
             subtitle="Ajusta búsqueda, fechas y cobertura; los resultados son solo de tus medios seguidos."
+            collapsible
+            defaultOpen={feedFiltersActive}
           />
         </div>
       </main>
@@ -246,7 +251,12 @@ export default async function FeedPage({ searchParams }: PageProps) {
   return (
     <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <FeedHeader feedSource={feedSource} slugs={feedSlugs} />
-      <TrendingChips terms={trending} queryBase="/feed" />
+      <TrendingChips
+        terms={trending}
+        queryBase="/feed"
+        collapsible
+        defaultOpen={false}
+      />
       <p className="mb-6 break-words text-sm text-zinc-500 dark:text-zinc-400">
         {feedSource === "auth"
           ? `Historias donde interviene al menos uno de tus medios (${feedSlugs.length} en tu cuenta).`
@@ -273,6 +283,8 @@ export default async function FeedPage({ searchParams }: PageProps) {
           clearHref="/feed"
           title="Filtrar historias"
           subtitle="Ajusta búsqueda, fechas y cobertura; los resultados son solo de tus medios seguidos."
+          collapsible
+          defaultOpen={feedFiltersActive}
         />
       </div>
 

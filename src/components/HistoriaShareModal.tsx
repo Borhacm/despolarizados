@@ -3,7 +3,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { HistoriaShareOptions } from "@/components/HistoriaShareOptions";
-import type { HistoriaShareVisualPayload } from "@/lib/share/historia-share-visual";
 
 type Props = {
   open: boolean;
@@ -11,7 +10,6 @@ type Props = {
   historiaId: string;
   title: string;
   url: string;
-  visual?: HistoriaShareVisualPayload | null;
 };
 
 export function HistoriaShareModal({
@@ -20,7 +18,6 @@ export function HistoriaShareModal({
   historiaId,
   title,
   url,
-  visual = null,
 }: Props) {
   const labelId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -87,15 +84,11 @@ export function HistoriaShareModal({
             </svg>
           </button>
         </div>
-        <p className="mb-4 line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">
-          {title}
-        </p>
         <HistoriaShareOptions
           variant="modal"
           historiaId={historiaId}
           title={title}
           url={url}
-          visual={visual}
         />
       </div>
     </div>,

@@ -12,6 +12,8 @@ export type HistoriaShareFields = {
   mix: CoverageMix | null;
   /** Imagen de artículo más reciente con foto (misma lógica que el hero de la ficha). */
   cover_image_url: string | null;
+  /** Para og:article:published_time (WhatsApp / Facebook). */
+  ultima_pub: string | null;
 };
 
 /**
@@ -23,7 +25,7 @@ export async function fetchHistoriaShareFields(
 ): Promise<HistoriaShareFields | null> {
   const { data: historia } = await supabase
     .from("historias")
-    .select("titulo_canonico, resumen_canonico, medio_count, article_count")
+    .select("titulo_canonico, resumen_canonico, medio_count, article_count, ultima_pub")
     .eq("id", historiaId)
     .maybeSingle();
 
@@ -47,6 +49,8 @@ export async function fetchHistoriaShareFields(
   const cover_image_url =
     (datedWithImg[0]?.imagen_url as string | undefined) ?? null;
 
+  const ultima_pub = (historia.ultima_pub as string | null) ?? null;
+
   if (medioIds.length === 0) {
     return {
       titulo_canonico: historia.titulo_canonico as string,
@@ -55,6 +59,7 @@ export async function fetchHistoriaShareFields(
       article_count: Number(historia.article_count ?? 0),
       mix: null,
       cover_image_url,
+      ultima_pub,
     };
   }
 
@@ -80,5 +85,6 @@ export async function fetchHistoriaShareFields(
     article_count: Number(historia.article_count ?? 0),
     mix,
     cover_image_url,
+    ultima_pub,
   };
 }

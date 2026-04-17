@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import { HistoriaShareModal } from "@/components/HistoriaShareModal";
-import type { HistoriaShareVisualPayload } from "@/lib/share/historia-share-visual";
 
 type Props = {
   historiaId: string;
   title: string;
   shareUrl: string;
-  visual?: HistoriaShareVisualPayload | null;
   /** Por defecto empuja el botón al final (listados). En ficha de historia usar false. */
   alignEnd?: boolean;
 };
@@ -17,7 +15,6 @@ export function StoryCardShareButton({
   historiaId,
   title,
   shareUrl,
-  visual = null,
   alignEnd = true,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -63,7 +60,6 @@ export function StoryCardShareButton({
         historiaId={historiaId}
         title={title}
         url={shareUrl}
-        visual={visual}
       />
     </>
   );

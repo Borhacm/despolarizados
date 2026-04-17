@@ -1,7 +1,6 @@
 "use client";
 
 import { HistoriaShareOgPreview } from "@/components/share/HistoriaShareOgPreview";
-import { HistoriaShareDomExportSection } from "@/components/share/HistoriaShareDomExportSection";
 import {
   IconFacebook,
   IconImage,
@@ -13,11 +12,7 @@ import {
   IconX,
 } from "@/components/share/share-brand-icons";
 import { copyTextToClipboard } from "@/lib/copy-to-clipboard";
-import {
-  historiaInstagramCaption,
-  historiaShareSnippet,
-} from "@/lib/share/historia-share-copy";
-import type { HistoriaShareVisualPayload } from "@/lib/share/historia-share-visual";
+import { historiaInstagramCaption } from "@/lib/share/historia-share-copy";
 import { isMobileShareContext } from "@/lib/share/mobile-instagram-share";
 import {
   buildFacebookShareUrl,
@@ -34,31 +29,21 @@ export type HistoriaShareOptionsProps = {
   title: string;
   url: string;
   variant?: "bar" | "modal";
-  visual?: HistoriaShareVisualPayload | null;
 };
 
-function useServerFetchPaths(historiaId: string, canonicalUrl: string) {
+/** Misma base que los enlaces compartidos (`url` = página de la historia). */
+function useAssetPngUrls(historiaId: string, historiaPageUrl: string) {
   return useMemo(() => {
     const ogPath = `/historia/${historiaId}/opengraph-image`;
     const storyPath = `/historia/${historiaId}/story-image`;
-    if (typeof window === "undefined") {
-      try {
-        const origin = new URL(canonicalUrl).origin;
-        return { og: `${origin}${ogPath}`, story: `${origin}${storyPath}` };
-      } catch {
-        return { og: ogPath, story: storyPath };
-      }
-    }
     try {
-      const origin = new URL(canonicalUrl).origin;
-      if (origin === window.location.origin) {
-        return { og: ogPath, story: storyPath };
-      }
+      const u = new URL(historiaPageUrl);
+      const origin = `${u.protocol}//${u.host}`;
       return { og: `${origin}${ogPath}`, story: `${origin}${storyPath}` };
     } catch {
       return { og: ogPath, story: storyPath };
     }
-  }, [historiaId, canonicalUrl]);
+  }, [historiaId, historiaPageUrl]);
 }
 
 const iconBtnBase =
@@ -69,7 +54,6 @@ export function HistoriaShareOptions({
   title,
   url,
   variant = "bar",
-  visual = null,
 }: HistoriaShareOptionsProps) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showIgManual, setShowIgManual] = useState(false);
@@ -83,30 +67,21 @@ export function HistoriaShareOptions({
     setMobileUi(isMobileShareContext());
   }, []);
 
-  const snippet = historiaShareSnippet(title);
   const igCaption = historiaInstagramCaption(title, url);
-  const fetchPaths = useServerFetchPaths(historiaId, url);
-
-  const hostLabel = useMemo(() => {
-    try {
-      return new URL(url).host;
-    } catch {
-      return "";
-    }
-  }, [url]);
+  const fetchPaths = useAssetPngUrls(historiaId, url);
 
   const linkItems = useMemo(
     () =>
       [
         {
           key: "x",
-          href: buildTwitterIntentUrl(url, title),
+          href: buildTwitterIntentUrl(url),
           label: "Abrir en X",
           Icon: IconX,
         },
         {
           key: "whatsapp",
-          href: buildWhatsAppShareUrl(title, url),
+          href: buildWhatsAppShareUrl(url),
           label: "Compartir en WhatsApp",
           Icon: IconWhatsApp,
         },
@@ -161,12 +136,12 @@ export function HistoriaShareOptions({
     setError(null);
 
     if (copyTextToClipboard(igCaption)) {
-      flash("Leyenda copiada.");
+      flash("Texto copiado.");
       return;
     }
     if (navigator.clipboard?.writeText) {
       void navigator.clipboard.writeText(igCaption).then(
-        () => flash("Leyenda copiada."),
+        () => flash("Texto copiado."),
         () => setShowIgManual(true),
       );
       return;
@@ -190,14 +165,14 @@ export function HistoriaShareOptions({
         blob,
         fileName: name,
         title,
-        caption: snippet,
+        caption: title,
         url,
         copyUrlToClipboard: copyUrlToClipboardAsync,
       });
       if (result === "shared") flash("Listo.");
       else if (result === "downloaded") flash("PNG descargado.");
     } catch {
-      setError("No se pudo obtener el PNG 1.91:1 (revisa la red).");
+      setError("No se pudo descargar la imagen horizontal (revisa la red).");
     } finally {
       setOgBusy(false);
     }
@@ -207,7 +182,6 @@ export function HistoriaShareOptions({
     flash,
     fetchPaths.og,
     historiaId,
-    snippet,
     title,
     url,
   ]);
@@ -237,7 +211,7 @@ export function HistoriaShareOptions({
         flash("PNG descargado.");
       }
     } catch {
-      setError("No se pudo obtener el PNG 9:16.");
+      setError("No se pudo descargar la imagen vertical (revisa la red).");
     } finally {
       setStoryBusy(false);
     }
@@ -265,7 +239,6 @@ export function HistoriaShareOptions({
     try {
       await navigator.share({
         title: title.length > 120 ? `${title.slice(0, 117)}…` : title,
-        text: snippet,
         url,
       });
     } catch (e) {
@@ -275,7 +248,7 @@ export function HistoriaShareOptions({
     } finally {
       setShareBusy(false);
     }
-  }, [onCopyUrl, snippet, title, url]);
+  }, [onCopyUrl, title, url]);
 
   const hasNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -345,9 +318,9 @@ export function HistoriaShareOptions({
       ) : null}
 
       {variant === "modal" ? (
-        <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-            Imagen generada en servidor
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Imagen para guardar o Stories
           </p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -355,20 +328,20 @@ export function HistoriaShareOptions({
               onClick={() => void onStoryImage()}
               disabled={storyBusy}
               className={imgRowBtnClass}
-              title="PNG 9:16 para Stories u otras apps"
+              title="Formato vertical para Instagram Stories u otras apps"
             >
               <IconImage className="h-5 w-5 shrink-0" />
-              {storyBusy ? "…" : "9:16 PNG"}
+              {storyBusy ? "…" : "Vertical (Stories)"}
             </button>
             <button
               type="button"
               onClick={() => void onShareOgPng()}
               disabled={ogBusy}
               className={imgRowBtnClass}
-              title="PNG 1.91:1, misma proporción que la vista previa del enlace"
+              title="Misma proporción que la vista previa del enlace"
             >
               <IconImage className="h-5 w-5 shrink-0" />
-              {ogBusy ? "…" : "1.91:1 PNG"}
+              {ogBusy ? "…" : "Horizontal"}
             </button>
           </div>
         </div>
@@ -379,18 +352,20 @@ export function HistoriaShareOptions({
             onClick={() => void onStoryImage()}
             disabled={storyBusy}
             className={imgRowBtnClass}
+            title="Vertical (Stories)"
           >
             <IconImage className="h-4 w-4 shrink-0" />
-            {storyBusy ? "…" : "9:16"}
+            {storyBusy ? "…" : "Vertical"}
           </button>
           <button
             type="button"
             onClick={() => void onShareOgPng()}
             disabled={ogBusy}
             className={imgRowBtnClass}
+            title="Horizontal"
           >
             <IconImage className="h-4 w-4 shrink-0" />
-            {ogBusy ? "…" : "1.91:1"}
+            {ogBusy ? "…" : "Horizontal"}
           </button>
         </div>
       )}
@@ -399,7 +374,7 @@ export function HistoriaShareOptions({
         <p
           className={`mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 ${variant === "bar" ? "sr-only" : ""}`}
         >
-          Redes y enlace
+          Enlace y redes
         </p>
         <div className={networksWrap}>
           {linkItems.map(({ key, href, label, Icon }) => (
@@ -431,30 +406,18 @@ export function HistoriaShareOptions({
         <p className="mb-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
           <span className="font-semibold text-zinc-700 dark:text-zinc-300">
             Instagram
-          </span>{" "}
-          no rellena enlaces en publicaciones: usa leyenda copiada o la imagen 9:16.
+          </span>
+          : copia el texto y pégalo en la publicación, o usa la imagen vertical de
+          arriba en Stories.
         </p>
         <button
           type="button"
           onClick={onCopyInstagramCaption}
           className={igBtnClass}
         >
-          Copiar leyenda
+          Copiar texto para Instagram
         </button>
       </div>
-
-      {visual ? (
-        <HistoriaShareDomExportSection
-          historiaId={historiaId}
-          title={title}
-          url={url}
-          hostLabel={hostLabel}
-          visual={visual}
-          variant={variant}
-          onFeedback={flash}
-          onError={setError}
-        />
-      ) : null}
     </div>
   );
 }

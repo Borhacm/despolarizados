@@ -163,12 +163,6 @@ export function StoryCard({
         historiaId={h.id}
         title={h.titulo_canonico}
         shareUrl={shareUrl}
-        visual={{
-          coverImageUrl: coverUrl ?? null,
-          mix: coverageMix ?? null,
-          medioCount: h.medio_count,
-          articleCount: h.article_count,
-        }}
       />
     </div>
   );

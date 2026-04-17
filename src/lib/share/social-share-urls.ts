@@ -1,23 +1,23 @@
 /**
- * URLs de “compartir” por plataforma. Mantener codificación explícita y centralizada.
+ * URLs de compartir por plataforma.
+ *
+ * WhatsApp / X / Reddit: cuando el mensaje es solo el enlace (o título = og:title),
+ * la vista previa en la app coincide con lo que generan og:title, og:description y og:image.
+ * Si se rellena mucho texto manual, la tarjeta sigue saliendo del enlace,
+ * pero el usuario ve duplicado titular + preview.
  */
-import {
-  historiaShareSnippet,
-  historiaWhatsAppMessage,
-} from "@/lib/share/historia-share-copy";
-
-export function buildTwitterIntentUrl(canonicalUrl: string, title: string): string {
-  const text = historiaShareSnippet(title);
-  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(canonicalUrl)}`;
+export function buildTwitterIntentUrl(canonicalUrl: string): string {
+  return `https://twitter.com/intent/tweet?url=${encodeURIComponent(canonicalUrl)}`;
 }
 
-export function buildWhatsAppShareUrl(title: string, canonicalUrl: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(historiaWhatsAppMessage(title, canonicalUrl))}`;
+/** Solo el enlace: la vista previa de WhatsApp usa los metadatos Open Graph del URL. */
+export function buildWhatsAppShareUrl(canonicalUrl: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(canonicalUrl.trim())}`;
 }
 
-export function buildRedditSubmitUrl(canonicalUrl: string, title: string): string {
-  const t = historiaShareSnippet(title);
-  return `https://www.reddit.com/submit?url=${encodeURIComponent(canonicalUrl)}&title=${encodeURIComponent(t)}`;
+/** Título del post = titular canónico (igual que og:title). */
+export function buildRedditSubmitUrl(canonicalUrl: string, tituloCanonico: string): string {
+  return `https://www.reddit.com/submit?url=${encodeURIComponent(canonicalUrl)}&title=${encodeURIComponent(tituloCanonico.trim())}`;
 }
 
 export function buildLinkedInShareUrl(canonicalUrl: string): string {

@@ -21,9 +21,40 @@ export async function GET(request: Request) {
   }
 
   try {
+    const { searchParams } = new URL(request.url);
+    const shardRaw = searchParams.get("shard");
+    const totalRaw = searchParams.get("total");
+    const hasShardingParams = shardRaw !== null || totalRaw !== null;
+    const shard = shardRaw === null ? 1 : Number.parseInt(shardRaw, 10);
+    const total = totalRaw === null ? 1 : Number.parseInt(totalRaw, 10);
+
+    if (
+      !Number.isInteger(shard) ||
+      !Number.isInteger(total) ||
+      total < 1 ||
+      shard < 1 ||
+      shard > total ||
+      (hasShardingParams && (shardRaw === null || totalRaw === null))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Parámetros inválidos: usa ambos ?shard=1..N&total=N (enteros) o ninguno.",
+        },
+        { status: 400 },
+      );
+    }
+
     const supabase = createServiceClient();
-    const result = await runIngest(supabase);
-    return NextResponse.json(result);
+    const result = await runIngest(supabase, {
+      shardIndex: shard - 1,
+      shardTotal: total,
+    });
+    return NextResponse.json({
+      ...result,
+      shard,
+      total,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: message }, { status: 500 });

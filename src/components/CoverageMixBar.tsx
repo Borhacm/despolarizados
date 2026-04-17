@@ -3,6 +3,19 @@ import {
   type CoverageMix,
 } from "@/lib/coverage-mix";
 
+/**
+ * Columnas de etiquetas alineadas con los tramos de la barra. Si un % es 0,
+ * asigna un ancho mínimo (~8 puntos de peso) para que el texto no quede en 0px.
+ */
+function labelGridTemplate(izqPct: number, centroPct: number, derPct: number): string {
+  const bump = (p: number) => (p <= 0 ? 8 : p);
+  const w1 = bump(izqPct);
+  const w2 = bump(centroPct);
+  const w3 = bump(derPct);
+  const t = w1 + w2 + w3;
+  return `${(w1 / t) * 100}% ${(w2 / t) * 100}% ${(w3 / t) * 100}%`;
+}
+
 export function CoverageMixBar({
   mix,
   className = "",
@@ -67,27 +80,26 @@ export function CoverageMixBar({
           />
         ) : null}
       </div>
-      {/*
-        Etiqueta + % juntos (gap), no en los extremos. Móvil: filas apiladas;
-        sm+: tres columnas con grupos alineados izq / centro / der.
-      */}
       <div
-        className={`grid w-full grid-cols-1 gap-y-1 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 sm:grid-cols-3 sm:gap-x-2 sm:gap-y-0 ${text}`}
+        className={`grid w-full min-w-0 gap-x-1 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 sm:gap-x-2 ${text}`}
+        style={{
+          gridTemplateColumns: labelGridTemplate(izqPct, centroPct, derPct),
+        }}
       >
-        <div className="flex min-w-0 items-baseline justify-start gap-1.5">
-          <span className="text-zinc-500 dark:text-zinc-400">Izq</span>
+        <div className="flex min-w-0 items-baseline justify-start gap-1">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Izq</span>
           <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(izqPct)}%
           </span>
         </div>
-        <div className="flex min-w-0 items-baseline justify-start gap-1.5 sm:justify-center">
-          <span className="text-zinc-500 dark:text-zinc-400">Centro</span>
+        <div className="flex min-w-0 items-baseline justify-center gap-1">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Centro</span>
           <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(centroPct)}%
           </span>
         </div>
-        <div className="flex min-w-0 items-baseline justify-start gap-1.5 sm:justify-end">
-          <span className="text-zinc-500 dark:text-zinc-400">Der</span>
+        <div className="flex min-w-0 items-baseline justify-end gap-1">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Der</span>
           <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(derPct)}%
           </span>
