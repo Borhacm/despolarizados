@@ -28,7 +28,7 @@ export function MedioForm() {
           type="password"
           required
           autoComplete="off"
-          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
         />
       </div>
 
@@ -41,7 +41,7 @@ export function MedioForm() {
             name="nombre"
             required
             placeholder="Ej. El País"
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           />
         </div>
         <div className="sm:col-span-2">
@@ -53,7 +53,7 @@ export function MedioForm() {
             required
             placeholder="ej. el-pais"
             pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           />
         </div>
         <div className="sm:col-span-2">
@@ -65,7 +65,7 @@ export function MedioForm() {
             required
             rows={4}
             placeholder="https://…"
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           />
         </div>
         <div>
@@ -76,7 +76,7 @@ export function MedioForm() {
             name="sesgo"
             required
             placeholder="centro-derecha"
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           />
         </div>
         <div>
@@ -87,7 +87,7 @@ export function MedioForm() {
             name="factualidad"
             required
             placeholder="alta"
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           />
         </div>
         <div className="sm:col-span-2">
@@ -97,7 +97,7 @@ export function MedioForm() {
           <input
             name="ownership"
             placeholder="Grupo editorial"
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           />
         </div>
         <div>
@@ -112,7 +112,7 @@ export function MedioForm() {
             name="prioridad"
             defaultValue="3"
             aria-label="Prioridad de ingesta de uno a cinco"
-            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
           >
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
@@ -151,7 +151,7 @@ export function MedioForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+        className="min-h-[48px] w-full rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
       >
         {isPending ? "Guardando…" : "Añadir medio"}
       </button>

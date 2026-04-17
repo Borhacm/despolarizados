@@ -1,8 +1,20 @@
 {
   "crons": [
     {
-      "path": "/api/cron/ingest",
-      "schedule": "0 7 * * *"
+      "path": "/api/cron/ingest?shard=1&total=4",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?shard=2&total=4",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?shard=3&total=4",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?shard=4&total=4",
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/newsletter-digest",

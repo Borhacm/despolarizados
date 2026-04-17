@@ -29,7 +29,7 @@ export function MergeHistoriasForm() {
           type="password"
           required
           autoComplete="off"
-          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
         />
       </div>
 
@@ -50,7 +50,7 @@ export function MergeHistoriasForm() {
           type="text"
           required
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
         />
       </div>
 
@@ -70,7 +70,7 @@ export function MergeHistoriasForm() {
           type="text"
           required
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 font-mono text-base dark:border-zinc-700 dark:bg-zinc-950 sm:text-sm"
         />
       </div>
 
@@ -94,7 +94,7 @@ export function MergeHistoriasForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+        className="min-h-[48px] w-full rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
       >
         {isPending ? "Fusionando…" : "Fusionar historias"}
       </button>

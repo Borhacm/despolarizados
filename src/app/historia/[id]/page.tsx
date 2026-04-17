@@ -1,7 +1,15 @@
 import { BiasMeter } from "@/components/BiasMeter";
 import { CoverageMixBar } from "@/components/CoverageMixBar";
+import { StoryCardShareButton } from "@/components/StoryCardShareButton";
 import { SesgoPill } from "@/components/SesgoPill";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import { coverageMixFromSesgos } from "@/lib/coverage-mix";
+import { fetchHistoriaShareFields } from "@/lib/historia-share";
+import {
+  historiaDocumentTitleShort,
+  historiaOgOpenGraphDescription,
+  historiaOgOpenGraphTitle,
+} from "@/lib/share/historia-og-metadata-text";
 import { formatDateTimeEs } from "@/lib/format";
 import { createPublicClient } from "@/lib/supabase/public";
 import { sesgoToPosition } from "@/lib/sesgo";
@@ -17,17 +25,68 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  const base = getAppBaseUrl();
+  const canonical = `${base}/historia/${id}`;
   const supabase = createPublicClient();
-  if (!supabase) return { title: "Historia" };
-  const { data } = await supabase
-    .from("historias")
-    .select("titulo_canonico")
-    .eq("id", id)
-    .maybeSingle();
-  const t = data?.titulo_canonico as string | undefined;
-  if (!t) return { title: "Historia" };
-  const short = t.length > 58 ? `${t.slice(0, 55)}…` : t;
-  return { title: short };
+  if (!supabase) {
+    return {
+      title: "Historia",
+      metadataBase: new URL(base),
+      alternates: { canonical },
+    };
+  }
+  const fields = await fetchHistoriaShareFields(supabase, id);
+  if (!fields) {
+    return {
+      title: "Historia",
+      metadataBase: new URL(base),
+      alternates: { canonical },
+    };
+  }
+  const t = historiaOgOpenGraphTitle(fields.titulo_canonico);
+  const short = historiaDocumentTitleShort(fields.titulo_canonico);
+  const desc = historiaOgOpenGraphDescription(fields);
+
+  /** Absolutas: LinkedIn/Facebook/WhatsApp resuelven mejor og:image y og:url. */
+  const ogImageUrl = `${base}/historia/${id}/opengraph-image`;
+
+  /** Vista previa “rica” (imagen grande + titular + texto): WhatsApp usa estos OG tags como Facebook. */
+  const publishedTime = fields.ultima_pub
+    ? new Date(fields.ultima_pub).toISOString()
+    : undefined;
+
+  return {
+    title: short,
+    description: desc,
+    metadataBase: new URL(base),
+    alternates: { canonical },
+    openGraph: {
+      title: t,
+      description: desc,
+      url: canonical,
+      siteName: "Despolarizados",
+      locale: "es_ES",
+      type: "article",
+      publishedTime,
+      modifiedTime: publishedTime,
+      section: "Comparativa de medios",
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: t,
+          type: "image/png",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t,
+      description: desc,
+      images: [ogImageUrl],
+    },
+  };
 }
 
 export default async function HistoriaPage(props: PageProps) {
@@ -105,113 +164,188 @@ export default async function HistoriaPage(props: PageProps) {
     });
   const heroImage = dated[0]?.imagen_url as string | undefined;
 
+  const shareUrl = `${getAppBaseUrl()}/historia/${id}`;
+
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
-      <div className="mb-8 space-y-4">
-        <Link
-          href="/"
-          className="text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline dark:text-emerald-400"
-        >
-          ← Inicio
-        </Link>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
-          Comparativa · {historia.medio_count} fuentes · {historia.article_count}{" "}
-          artículos
-        </p>
-        <h1 className="text-balance text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
-          {historia.titulo_canonico}
-        </h1>
-        {historia.resumen_canonico ? (
-          <p className="max-w-3xl text-pretty text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {historia.resumen_canonico}
+    <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
+      <div className="mb-10 space-y-5">
+        <div className="mx-auto max-w-3xl space-y-5">
+          <Link
+            href="/"
+            className="inline-flex min-h-[44px] items-center text-sm font-semibold text-emerald-700 decoration-emerald-300/70 underline-offset-2 hover:underline sm:min-h-0 dark:text-emerald-400"
+          >
+            ← Inicio
+          </Link>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+            Comparativa · {historia.medio_count} medios · {historia.article_count}{" "}
+            artículos
           </p>
-        ) : null}
-        {heroImage ? (
-          <div className="relative mt-6 max-h-[420px] overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={heroImage}
-              alt=""
-              className="max-h-[420px] w-full object-cover object-center"
-              referrerPolicy="no-referrer"
+          <h1 className="text-balance text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+            {historia.titulo_canonico}
+          </h1>
+          {historia.resumen_canonico ? (
+            <p className="text-pretty text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
+              {historia.resumen_canonico}
+            </p>
+          ) : null}
+          <div className="pt-0.5">
+            <StoryCardShareButton
+              historiaId={id}
+              title={historia.titulo_canonico}
+              shareUrl={shareUrl}
+              alignEnd={false}
             />
           </div>
-        ) : null}
-        <div className="max-w-2xl space-y-6 pt-2">
-          {coverageMix ? (
-            <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                Cobertura por orientación (fuentes únicas)
-              </p>
-              <CoverageMixBar mix={coverageMix} />
+          {heroImage ? (
+            <div className="relative mt-2 max-h-[420px] overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={heroImage}
+                alt=""
+                className="max-h-[420px] w-full object-cover object-center"
+                referrerPolicy="no-referrer"
+              />
             </div>
           ) : null}
-          <BiasMeter
-            position={avgPos}
-            caption="Promedio orientativo del conjunto de medios (no es verificación independiente)."
-          />
+          <div className="space-y-6 border-t border-zinc-200/80 pt-6 dark:border-zinc-800/80">
+            {coverageMix ? (
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Cobertura por orientación (medios únicos)
+                </p>
+                <CoverageMixBar mix={coverageMix} />
+              </div>
+            ) : null}
+            <BiasMeter
+              position={avgPos}
+              caption="Promedio orientativo del conjunto de medios (no es verificación independiente)."
+            />
+          </div>
         </div>
       </div>
 
       <section className="mb-12">
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-          Fuentes ordenadas en el espectro (izq. → der.)
+          Medios ordenados en el espectro (izq. → der.)
         </h2>
-        <div className="overflow-x-auto rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50/90 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
-              <tr>
-                <th className="px-4 py-3">Medio</th>
-                <th className="px-4 py-3">Espectro</th>
-                <th className="px-4 py-3">Titular</th>
-                <th className="px-4 py-3">Publicación</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {artsBySpectrum.map((a) => {
-                const m = medioMap.get(a.medio_id);
-                return (
-                  <tr key={a.id} className="bg-white dark:bg-zinc-950/20">
-                    <td className="px-4 py-3">
-                      {m?.slug ? (
-                        <Link
-                          href={`/medios/${m.slug}`}
-                          className="font-semibold text-zinc-900 hover:text-emerald-800 hover:underline dark:text-zinc-100 dark:hover:text-emerald-300"
-                        >
-                          {m.nombre}
-                        </Link>
-                      ) : (
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                          {m?.nombre ?? "—"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                        {m?.sesgo ? <SesgoPill sesgo={m.sesgo} /> : null}
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {m?.sesgo ?? "—"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <a
-                        href={a.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-emerald-800 hover:underline dark:text-emerald-200"
+        <p className="mb-3 text-xs text-zinc-500 sm:hidden dark:text-zinc-400">
+          Una tarjeta por medio; el orden sigue el espectro editorial.
+        </p>
+        <p className="mb-2 hidden text-xs text-zinc-500 sm:block lg:hidden dark:text-zinc-400">
+          Si no ves todas las columnas, desplaza la tabla horizontalmente.
+        </p>
+
+        <ul className="mb-0 space-y-3 sm:hidden">
+          {artsBySpectrum.map((a) => {
+            const m = medioMap.get(a.medio_id);
+            return (
+              <li
+                key={a.id}
+                className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/50"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2 gap-y-1">
+                  <div className="min-w-0">
+                    {m?.slug ? (
+                      <Link
+                        href={`/medios/${m.slug}`}
+                        className="font-semibold text-zinc-900 hover:text-emerald-800 hover:underline dark:text-zinc-100 dark:hover:text-emerald-300"
                       >
-                        {a.titulo}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                      {formatDateTimeEs(a.fecha_pub)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        {m?.nombre ?? "—"}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {m?.nombre ?? "—"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    {m?.sesgo ? <SesgoPill sesgo={m.sesgo} /> : null}
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {m?.sesgo ?? "—"}
+                    </span>
+                  </div>
+                </div>
+                <a
+                  href={a.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 block break-words text-sm font-medium text-emerald-800 underline-offset-2 hover:underline dark:text-emerald-200"
+                >
+                  {a.titulo}
+                </a>
+                <p className="mt-2 text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                  {formatDateTimeEs(a.fecha_pub)}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="relative hidden overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm sm:block dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 rounded-l-2xl bg-gradient-to-r from-white to-transparent dark:from-zinc-950 lg:hidden"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 rounded-r-2xl bg-gradient-to-l from-white to-transparent dark:from-zinc-950 lg:hidden"
+            aria-hidden
+          />
+          <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b border-zinc-200 bg-zinc-50/90 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+                <tr>
+                  <th className="px-4 py-3">Medio</th>
+                  <th className="px-4 py-3">Espectro</th>
+                  <th className="px-4 py-3">Titular</th>
+                  <th className="px-4 py-3">Publicación</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {artsBySpectrum.map((a) => {
+                  const m = medioMap.get(a.medio_id);
+                  return (
+                    <tr key={a.id} className="bg-white dark:bg-zinc-950/20">
+                      <td className="px-4 py-3">
+                        {m?.slug ? (
+                          <Link
+                            href={`/medios/${m.slug}`}
+                            className="font-semibold text-zinc-900 hover:text-emerald-800 hover:underline dark:text-zinc-100 dark:hover:text-emerald-300"
+                          >
+                            {m.nombre}
+                          </Link>
+                        ) : (
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            {m?.nombre ?? "—"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                          {m?.sesgo ? <SesgoPill sesgo={m.sesgo} /> : null}
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {m?.sesgo ?? "—"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={a.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-emerald-800 hover:underline dark:text-emerald-200"
+                        >
+                          {a.titulo}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
+                        {formatDateTimeEs(a.fecha_pub)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

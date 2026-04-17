@@ -3,6 +3,19 @@ import {
   type CoverageMix,
 } from "@/lib/coverage-mix";
 
+/**
+ * Columnas de etiquetas alineadas con los tramos de la barra. Si un % es 0,
+ * asigna un ancho mínimo (~8 puntos de peso) para que el texto no quede en 0px.
+ */
+function labelGridTemplate(izqPct: number, centroPct: number, derPct: number): string {
+  const bump = (p: number) => (p <= 0 ? 8 : p);
+  const w1 = bump(izqPct);
+  const w2 = bump(centroPct);
+  const w3 = bump(derPct);
+  const t = w1 + w2 + w3;
+  return `${(w1 / t) * 100}% ${(w2 / t) * 100}% ${(w3 / t) * 100}%`;
+}
+
 export function CoverageMixBar({
   mix,
   className = "",
@@ -10,8 +23,8 @@ export function CoverageMixBar({
 }: {
   mix: CoverageMix;
   className?: string;
-  /** `compact`: listados; el ancho lo define el contenedor (`w-full`). */
-  size?: "default" | "compact";
+  /** `compact`: listados; `featured`: portada (móvil: barra más alta y legible). */
+  size?: "default" | "compact" | "featured";
 }) {
   const { izqPct, centroPct, derPct, izq, centro, der } = mix;
   const n = izq + centro + der;
@@ -19,7 +32,9 @@ export function CoverageMixBar({
   const text =
     size === "compact"
       ? "text-[10px] leading-tight"
-      : "text-[11px] leading-tight";
+      : size === "featured"
+        ? "text-xs leading-snug sm:text-[11px] sm:leading-tight"
+        : "text-[11px] leading-tight";
 
   const round = (x: number) => Math.round(x);
 
@@ -27,12 +42,16 @@ export function CoverageMixBar({
 
   const listWrap = "w-full min-w-0";
 
+  const trackClass =
+    size === "featured"
+      ? "relative h-4 w-full min-w-[12rem] overflow-hidden rounded-full bg-zinc-200 ring-1 ring-inset ring-zinc-400/35 dark:bg-zinc-800 dark:ring-zinc-500/40"
+      : "relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/90 dark:bg-zinc-800/90";
+
   return (
-    <div className={`space-y-1 ${listWrap} ${className}`}>
-      <div
-        className="relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/90 dark:bg-zinc-800/90"
-        title={titleBar}
-      >
+    <div
+      className={`${size === "featured" ? "space-y-1.5 sm:space-y-1" : "space-y-1"} ${listWrap} ${className}`}
+    >
+      <div className={trackClass} title={titleBar}>
         {viz.left ? (
           <div
             className="absolute inset-y-0 z-[2] bg-rose-500/90 dark:bg-rose-600/90"
@@ -62,26 +81,29 @@ export function CoverageMixBar({
         ) : null}
       </div>
       <div
-        className={`flex w-full flex-wrap justify-between gap-x-1 gap-y-0.5 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 ${text}`}
+        className={`grid w-full min-w-0 gap-x-1 font-medium tabular-nums text-zinc-500 dark:text-zinc-400 sm:gap-x-2 ${text}`}
+        style={{
+          gridTemplateColumns: labelGridTemplate(izqPct, centroPct, derPct),
+        }}
       >
-        <span>
-          Izq{" "}
-          <span className="text-zinc-700 dark:text-zinc-300">
+        <div className="flex min-w-0 items-baseline justify-start gap-1">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Izq</span>
+          <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(izqPct)}%
           </span>
-        </span>
-        <span>
-          Centro{" "}
-          <span className="text-zinc-700 dark:text-zinc-300">
+        </div>
+        <div className="flex min-w-0 items-baseline justify-center gap-1">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Centro</span>
+          <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(centroPct)}%
           </span>
-        </span>
-        <span>
-          Der{" "}
-          <span className="text-zinc-700 dark:text-zinc-300">
+        </div>
+        <div className="flex min-w-0 items-baseline justify-end gap-1">
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Der</span>
+          <span className="whitespace-nowrap text-zinc-700 dark:text-zinc-300">
             {round(derPct)}%
           </span>
-        </span>
+        </div>
       </div>
     </div>
   );

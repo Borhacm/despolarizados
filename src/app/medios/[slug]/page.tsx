@@ -35,7 +35,7 @@ export default async function MedioDetailPage(props: PageProps) {
   const supabase = await createServerSupabaseOrNull();
   if (!supabase) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center text-zinc-600">
+      <div className="mx-auto max-w-3xl overflow-x-clip px-4 py-16 text-center text-zinc-600">
         Configura las variables de Supabase en <code>.env.local</code>.
       </div>
     );
@@ -87,27 +87,27 @@ export default async function MedioDetailPage(props: PageProps) {
   const initials = getMedioInitials(medio.nombre);
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
       <Link
         href="/medios"
-        className={`text-sm ${esCentro ? `text-zinc-600 ${linkAccent} dark:text-zinc-400` : linkEmerald}`}
+        className={`inline-flex min-h-[44px] items-center text-sm sm:min-h-0 ${esCentro ? `text-zinc-600 ${linkAccent} dark:text-zinc-400` : linkEmerald}`}
       >
         ← Todos los medios
       </Link>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950/50">
         <div className={`h-2 w-full bg-gradient-to-r ${hue}`} aria-hidden />
-        <div className="p-6 sm:p-8">
+        <div className="p-5 sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex gap-5">
+            <div className="flex min-w-0 gap-4 sm:gap-5">
               <div
-                className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-200 text-2xl font-bold text-zinc-700 shadow-inner dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-200"
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-200 text-xl font-bold text-zinc-700 shadow-inner sm:h-20 sm:w-20 sm:text-2xl dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-200"
                 aria-hidden
               >
                 {initials}
               </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
                   {medio.nombre}
                 </h1>
                 <p className="mt-2 text-zinc-600 dark:text-zinc-400">
@@ -146,7 +146,7 @@ export default async function MedioDetailPage(props: PageProps) {
           {(reciente ?? []).map((a: { id: string; titulo: string; url: string; fecha_pub: string | null; historia_id: string | null }) => (
             <li
               key={a.id}
-              className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30"
+              className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 sm:p-3 dark:border-zinc-800 dark:bg-zinc-900/30"
             >
               <a
                 href={a.url}
@@ -154,8 +154,8 @@ export default async function MedioDetailPage(props: PageProps) {
                 rel="noopener noreferrer"
                 className={
                   esCentro
-                    ? "font-medium text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-200"
-                    : "font-medium text-zinc-900 hover:text-emerald-800 dark:text-zinc-100 dark:hover:text-emerald-200"
+                    ? "block text-base font-medium text-zinc-900 hover:text-zinc-700 active:text-zinc-800 dark:text-zinc-100 dark:hover:text-zinc-200"
+                    : "block text-base font-medium text-zinc-900 hover:text-emerald-800 active:text-emerald-900 dark:text-zinc-100 dark:hover:text-emerald-200"
                 }
               >
                 {a.titulo}

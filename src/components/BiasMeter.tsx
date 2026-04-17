@@ -13,11 +13,11 @@ export function BiasMeter({
 }) {
   const p = Math.min(100, Math.max(0, position));
   return (
-    <div className="w-full space-y-1">
-      <div className="flex justify-between text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-        <span>Izquierda</span>
-        <span>Centro</span>
-        <span>Derecha</span>
+    <div className="w-full space-y-1.5">
+      <div className="grid grid-cols-3 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        <span className="text-left">Izquierda</span>
+        <span className="text-center">Centro</span>
+        <span className="text-right">Derecha</span>
       </div>
       <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-rose-200 via-zinc-200 to-sky-300 dark:from-rose-950/50 dark:via-zinc-800 dark:to-sky-950/60">
         <div

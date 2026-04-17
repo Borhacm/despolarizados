@@ -59,11 +59,11 @@ function Banner({ param }: { param: keyof typeof MESSAGES }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-16 z-[60] flex justify-center px-4"
+      className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top,0px)+9rem)] z-[60] flex justify-center px-4 sm:top-[calc(4rem+env(safe-area-inset-top,0px))]"
       role="status"
     >
       <div
-        className={`pointer-events-auto max-w-lg rounded-2xl border ${border} bg-[var(--surface)] px-4 py-3 text-sm text-zinc-800 shadow-lg dark:bg-zinc-900 dark:text-zinc-100`}
+        className={`pointer-events-auto max-w-lg rounded-2xl border ${border} bg-[var(--surface)] px-4 py-3 text-sm leading-snug text-zinc-800 shadow-lg dark:bg-zinc-900 dark:text-zinc-100`}
       >
         {text}
       </div>

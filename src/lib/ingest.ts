@@ -18,16 +18,18 @@ function embeddingMatchThreshold(): number {
 const MAX_ITEMS_PER_FEED = 22;
 const MAX_HISTORIAS_COMPARE = 500;
 const LOOKBACK_DAYS = 14;
+const RSS_PARSER_TIMEOUT_MS = 10000;
+const FETCH_TIMEOUT_MS = 10000;
+const DEFAULT_INGEST_TIME_BUDGET_MS = 240000;
+const INGEST_TIME_SAFETY_MARGIN_MS = 5000;
 
 const parser = new Parser({
-  timeout: 20000,
+  timeout: RSS_PARSER_TIMEOUT_MS,
   headers: {
     "User-Agent": "Despolarizados/0.1 (aggregator)",
     Accept: "application/rss+xml, application/xml, text/xml, */*",
   },
 });
-
-const FETCH_TIMEOUT_MS = 25000;
 
 /** WordPress REST: mismo sitio desactivó RSS pero expone `/wp-json/wp/v2/posts`. */
 function isWordPressRestPostsUrl(url: string): boolean {
@@ -91,12 +93,20 @@ async function loadFeedItems(feedUrl: string): Promise<Item[]> {
 
 export type IngestResult = {
   ok: boolean;
+  timedOutEarly: boolean;
+  timeBudgetMs: number;
+  feedsScheduled: number;
   feedsProcessed: number;
   itemsSeen: number;
   articlesInserted: number;
   skippedDuplicate: number;
   clusterMode: "openai" | "lexical";
   errors: string[];
+};
+
+export type IngestOptions = {
+  shardIndex?: number;
+  shardTotal?: number;
 };
 
 type Medio = {
@@ -112,6 +122,41 @@ type PoolLexical = {
   titulo_canonico: string;
   resumen_canonico: string | null;
 };
+
+function parseIntEnv(name: string, fallback: number, min: number, max: number): number {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function ingestTimeBudgetMs(): number {
+  return parseIntEnv("INGEST_TIME_BUDGET_MS", DEFAULT_INGEST_TIME_BUDGET_MS, 30000, 295000);
+}
+
+function normalizeShard(totalRaw: number | undefined, indexRaw: number | undefined): {
+  total: number;
+  index: number;
+} {
+  const total =
+    typeof totalRaw === "number" && Number.isInteger(totalRaw) && totalRaw >= 1
+      ? totalRaw
+      : 1;
+  const index =
+    typeof indexRaw === "number" &&
+    Number.isInteger(indexRaw) &&
+    indexRaw >= 0 &&
+    indexRaw < total
+      ? indexRaw
+      : 0;
+  return { total, index };
+}
+
+function pickShardFeeds<T>(allFeeds: T[], total: number, index: number): T[] {
+  if (total <= 1) return allFeeds;
+  return allFeeds.filter((_, feedIndex) => feedIndex % total === index);
+}
 
 function pickTextForEmbedding(title: string, summary: string): string {
   return `${title}\n${summary}`.trim();
@@ -206,8 +251,14 @@ function findBestHistoriaLexical(
 
 export async function runIngest(
   supabase: SupabaseClient,
+  options: IngestOptions = {},
 ): Promise<IngestResult> {
   const errors: string[] = [];
+  const timeBudgetMs = ingestTimeBudgetMs();
+  const deadlineMs = Date.now() + timeBudgetMs;
+  const shard = normalizeShard(options.shardTotal, options.shardIndex);
+  let timedOutEarly = false;
+  let feedsScheduled = 0;
   let feedsProcessed = 0;
   let itemsSeen = 0;
   let articlesInserted = 0;
@@ -224,18 +275,30 @@ export async function runIngest(
 
   if (mediosErr) throw mediosErr;
   const list = (medios ?? []) as Medio[];
+  const allFeeds = list.flatMap((medio) =>
+    medio.rss_urls.map((feedUrl) => ({ medio, feedUrl })),
+  );
+  const scheduledFeeds = pickShardFeeds(allFeeds, shard.total, shard.index);
+  feedsScheduled = scheduledFeeds.length;
 
   let poolOpenAI: PoolOpenAI[] =
     clusterMode === "openai" ? await loadHistoriasPoolOpenAI(supabase) : [];
   /** Siempre cargado: modo léxico lo usa siempre; OpenAI lo usa como segundo intento si el embedding no casa. */
   let poolLexical: PoolLexical[] = await loadHistoriasPoolLexical(supabase);
 
-  for (const medio of list) {
-    for (const feedUrl of medio.rss_urls) {
-      feedsProcessed += 1;
-      try {
-        const items = (await loadFeedItems(feedUrl)).slice(0, MAX_ITEMS_PER_FEED);
-        for (const item of items) {
+  feedLoop: for (const { medio, feedUrl } of scheduledFeeds) {
+    if (Date.now() >= deadlineMs - INGEST_TIME_SAFETY_MARGIN_MS) {
+      timedOutEarly = true;
+      break;
+    }
+    feedsProcessed += 1;
+    try {
+      const items = (await loadFeedItems(feedUrl)).slice(0, MAX_ITEMS_PER_FEED);
+      for (const item of items) {
+        if (Date.now() >= deadlineMs - INGEST_TIME_SAFETY_MARGIN_MS) {
+          timedOutEarly = true;
+          break feedLoop;
+        }
           itemsSeen += 1;
           const url = item.link?.trim();
           const title = (item.title ?? "").trim();
@@ -428,16 +491,18 @@ export async function runIngest(
               poolLexical = await loadHistoriasPoolLexical(supabase);
             }
           }
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        errors.push(`${medio.nombre} (${feedUrl}): ${msg}`);
       }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      errors.push(`${medio.nombre} (${feedUrl}): ${msg}`);
     }
   }
 
   return {
     ok: errors.length === 0,
+    timedOutEarly,
+    timeBudgetMs,
+    feedsScheduled,
     feedsProcessed,
     itemsSeen,
     articlesInserted,

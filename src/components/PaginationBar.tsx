@@ -30,13 +30,13 @@ export function PaginationBar({
       {page > 1 ? (
         <Link
           href={href(page - 1)}
-          className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:border-emerald-300 hover:bg-emerald-50/80 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
+          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:border-emerald-300 hover:bg-emerald-50/80 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
         >
           ← Anterior
         </Link>
       ) : (
         <span
-          className="rounded-xl border border-zinc-200/60 px-4 py-2 text-sm text-zinc-400 dark:border-zinc-700/80 dark:text-zinc-500"
+          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-zinc-200/60 px-4 py-2 text-sm text-zinc-400 dark:border-zinc-700/80 dark:text-zinc-500"
           aria-disabled
         >
           ← Anterior
@@ -48,13 +48,13 @@ export function PaginationBar({
       {hasMore ? (
         <Link
           href={href(page + 1)}
-          className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:border-emerald-300 hover:bg-emerald-50/80 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
+          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:border-emerald-300 hover:bg-emerald-50/80 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
         >
           Siguiente →
         </Link>
       ) : (
         <span
-          className="rounded-xl border border-zinc-200/60 px-4 py-2 text-sm text-zinc-400 dark:border-zinc-700/80 dark:text-zinc-500"
+          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-zinc-200/60 px-4 py-2 text-sm text-zinc-400 dark:border-zinc-700/80 dark:text-zinc-500"
           aria-disabled
         >
           Siguiente →
