@@ -3,6 +3,7 @@ import { createServerSupabaseOrNull } from "@/lib/supabase/server";
 import { NewsletterFlash } from "@/components/NewsletterFlash";
 import { ScrollSubscribeModal } from "@/components/ScrollSubscribeModal";
 import { AnalyticsConsent } from "@/components/AnalyticsConsent";
+import { SiteFooter } from "@/components/SiteFooter";
 import { THEME_STORAGE_KEY } from "@/lib/theme-storage";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -80,6 +81,7 @@ export default async function RootLayout({
         </Suspense>
         <ScrollSubscribeModal />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );
