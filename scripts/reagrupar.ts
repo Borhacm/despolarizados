@@ -195,6 +195,10 @@ async function applyChanges(
     if (!count) {
       await withRetry(() => sb.from("historias").delete().eq("id", hid), "borrar historia vacía");
       removed += 1;
+    } else if (!finalIds.includes(hid)) {
+      // Historia de origen que conserva artículos fuera de la ventana: sus recuentos
+      // quedaban desfasados (p. ej. «2 medios» con un solo artículo).
+      finalIds.push(hid);
     }
   }
   for (const hid of finalIds) {
