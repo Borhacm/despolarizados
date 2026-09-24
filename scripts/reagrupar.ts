@@ -110,15 +110,38 @@ function summarize(groups: RegroupGroup[], targets: (string | null)[]) {
   }
 }
 
+/**
+ * Reintenta una operación de Supabase: un 504 suelto («Gateway Timeout») tumbó la primera
+ * aplicación a mitad del guardado de embeddings.
+ */
+async function withRetry<T extends { error: unknown }>(op: () => PromiseLike<T>, label: string): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    const res = await op();
+    if (!res.error) return res;
+    if (attempt >= 4) throw new Error(`${label}: ${JSON.stringify(res.error)}`);
+    await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+  }
+}
+
 async function applyChanges(
   sb: SupabaseClient,
   groups: RegroupGroup[],
   targets: (string | null)[],
   newlyEmbedded: RegroupItem[],
 ) {
-  for (const it of newlyEmbedded) {
-    const { error } = await sb.from("articulos").update({ embedding: it.emb }).eq("id", it.id);
-    if (error) throw error;
+  // Embeddings de 5 en 5 en paralelo, cada uno con reintentos.
+  for (let k = 0; k < newlyEmbedded.length; k += 5) {
+    await Promise.all(
+      newlyEmbedded
+        .slice(k, k + 5)
+        .map((it) =>
+          withRetry(
+            () => sb.from("articulos").update({ embedding: it.emb }).eq("id", it.id),
+            "guardar embedding",
+          ),
+        ),
+    );
+    if (k % 250 === 0 && k > 0) console.log(`${k} embeddings guardados…`);
   }
   const touchedOld = new Set<string>();
   const finalIds: string[] = [];
@@ -127,9 +150,11 @@ async function applyChanges(
     let target = targets[i];
     const seedItem = g.items.find((it) => it.emb === g.seed) ?? g.items[0]!;
     if (!target) {
-      const { data, error } = await sb
-        .from("historias")
-        .insert({
+      const { data } = await withRetry(
+        () =>
+          sb
+            .from("historias")
+            .insert({
           titulo_canonico: seedItem.titulo,
           embedding: g.centroid,
           seed_embedding: g.seed,
@@ -137,40 +162,52 @@ async function applyChanges(
           article_count: 0,
           medio_count: 0,
         })
-        .select("id")
-        .single();
-      if (error) throw error;
-      target = data!.id as string;
+            .select("id")
+            .single(),
+        "crear historia",
+      );
+      target = (data as { id: string }).id;
     } else {
-      const { error } = await sb
-        .from("historias")
-        .update({ embedding: g.centroid, seed_embedding: g.seed })
-        .eq("id", target);
-      if (error) throw error;
+      const id = target;
+      await withRetry(
+        () => sb.from("historias").update({ embedding: g.centroid, seed_embedding: g.seed }).eq("id", id),
+        "actualizar historia",
+      );
     }
     const moving = g.items.filter((it) => it.historiaId !== target);
     for (const it of moving) if (it.historiaId) touchedOld.add(it.historiaId);
     for (let k = 0; k < moving.length; k += 200) {
       const ids = moving.slice(k, k + 200).map((it) => it.id);
-      const { error } = await sb.from("articulos").update({ historia_id: target }).in("id", ids);
-      if (error) throw error;
+      const id = target;
+      await withRetry(
+        () => sb.from("articulos").update({ historia_id: id }).in("id", ids),
+        "mover artículos",
+      );
     }
     finalIds.push(target);
   }
   let removed = 0;
   for (const hid of touchedOld) {
-    const { count, error } = await sb
-      .from("articulos")
-      .select("id", { count: "exact", head: true })
-      .eq("historia_id", hid);
-    if (error) throw error;
+    const { count } = await withRetry(
+      () => sb.from("articulos").select("id", { count: "exact", head: true }).eq("historia_id", hid),
+      "contar artículos",
+    );
     if (!count) {
-      const { error: delErr } = await sb.from("historias").delete().eq("id", hid);
-      if (delErr) throw delErr;
+      await withRetry(() => sb.from("historias").delete().eq("id", hid), "borrar historia vacía");
       removed += 1;
     }
   }
-  for (const hid of finalIds) await recomputeHistoria(sb, hid);
+  for (const hid of finalIds) {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await recomputeHistoria(sb, hid);
+        break;
+      } catch (e) {
+        if (attempt >= 4) throw e;
+        await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+      }
+    }
+  }
   console.log(`\nAplicado: ${finalIds.length} historias recalculadas, ${removed} historias vacías eliminadas.`);
 }
 
