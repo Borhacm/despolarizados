@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
     const cdn = [
       {
         key: "Vercel-CDN-Cache-Control",
-        value: "public, s-maxage=120, stale-while-revalidate=600",
+        value: "public, s-maxage=60, stale-while-revalidate=60",
       },
     ];
     // Imágenes para compartir: generarlas cuesta ~3 s; una hora de caché basta.
