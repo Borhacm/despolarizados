@@ -70,7 +70,14 @@ values
   ('El Periódico (Cataluña)', 'el-periodico-catalunya', array['https://www.elperiodico.cat/es/rss/rss_portada.xml']::text[], 'centro-izquierda', 'media-alta', 'Prensa Ibérica', 3, true),
   ('Ara', 'ara', array['https://www.ara.cat/rss']::text[], 'centro-izquierda', 'alta', 'Editorial Ara', 4, true),
   ('Regió7', 'regio7', array['https://www.regio7.cat/rss']::text[], 'centro', 'media-alta', 'Grupo Godó', 3, true),
-  ('VilaWeb', 'vilaweb', array['https://www.vilaweb.cat/rss']::text[], 'centro-izquierda', 'media', 'Partal Maresma', 3, true)
+  ('VilaWeb', 'vilaweb', array['https://www.vilaweb.cat/rss']::text[], 'centro-izquierda', 'media', 'Partal Maresma', 3, true),
+  ('The Objective', 'the-objective', array['https://theobjective.com/feed/']::text[], 'derecha', 'media', 'The Objective', 3, true),
+  ('El Debate', 'el-debate', array['https://www.eldebate.com/rss/home.xml']::text[], 'derecha', 'media', 'Asociación Católica de Propagandistas', 3, true),
+  ('Crónica Global', 'cronica-global', array['https://cronicaglobal.elespanol.com/rss']::text[], 'centro-derecha', 'media', 'El León de El Español', 3, true),
+  ('Newtral', 'newtral', array['https://www.newtral.es/feed/']::text[], 'centro', 'media', 'Newtral Media Audiovisual', 3, true),
+  ('El Salto', 'el-salto', array['https://www.elsaltodiario.com/general/feed']::text[], 'izquierda', 'media', 'Cooperativa El Salto', 3, true),
+  ('La Marea', 'la-marea', array['https://www.lamarea.com/feed/']::text[], 'izquierda', 'media', 'Cooperativa Más Público', 3, true),
+  ('Diario Red', 'diario-red', array['https://www.diario-red.com/rss/']::text[], 'izquierda', 'media', 'Diario Red', 3, true)
 on conflict (slug) do update set
   rss_urls = excluded.rss_urls,
   sesgo = excluded.sesgo,

@@ -43,7 +43,7 @@ const parser = new Parser({
   timeout: RSS_PARSER_TIMEOUT_MS,
   headers: {
     "User-Agent": INGEST_USER_AGENT,
-    Accept: "application/rss+xml, application/xml, text/xml, */*",
+    Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
   },
 });
 
