@@ -3,18 +3,23 @@ import type { Item } from "rss-parser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { recomputeHistoria } from "@/lib/historia-recompute";
 import { embedTexts } from "@/lib/embeddings";
-import { getIngestClusterMode } from "@/lib/ingest-mode";
+import { getIngestClusterMode, type IngestClusterMode } from "@/lib/ingest-mode";
 import { shouldExcludeLowValueNews } from "@/lib/ingest-relevance";
 import { lexicalClusteringScore, parseLexicalThreshold } from "@/lib/title-similarity";
 import { cosineSimilarity, mergeEmbeddings, parseVector } from "@/lib/vector";
 import { snippet, SNIPPET_STORE_CHARS } from "@/lib/snippet";
 
-/** Umbral coseno embedding vs. historia; por defecto igual que antes (0.82). */
-function embeddingMatchThreshold(): number {
+/**
+ * Umbral de coseno artículo-historia. Cada modelo reparte las similitudes de forma
+ * distinta: e5 (local) las concentra arriba. 0,88 salió de comparar agrupados sobre
+ * 1.219 artículos reales (48 h) el 25 sept 2026.
+ */
+function embeddingMatchThreshold(mode: IngestClusterMode): number {
+  const fallback = mode === "local" ? 0.88 : 0.82;
   const raw = process.env.INGEST_EMBEDDING_THRESHOLD?.trim();
-  if (!raw) return 0.82;
+  if (!raw) return fallback;
   const n = Number.parseFloat(raw);
-  if (!Number.isFinite(n) || n <= 0 || n > 1) return 0.82;
+  if (!Number.isFinite(n) || n <= 0 || n > 1) return fallback;
   return n;
 }
 const MAX_ITEMS_PER_FEED = 40;
@@ -112,13 +117,15 @@ export type IngestResult = {
   itemsExcludedLowValue: number;
   articlesInserted: number;
   skippedDuplicate: number;
-  clusterMode: "openai" | "lexical";
+  clusterMode: IngestClusterMode;
   errors: string[];
 };
 
 export type IngestOptions = {
   shardIndex?: number;
   shardTotal?: number;
+  /** Función de embeddings; el modo `local` la inyecta desde el script de ingesta. */
+  embed?: (texts: string[]) => Promise<number[][]>;
 };
 
 type Medio = {
@@ -137,7 +144,8 @@ function parseIntEnv(name: string, fallback: number, min: number, max: number): 
 }
 
 function ingestTimeBudgetMs(): number {
-  return parseIntEnv("INGEST_TIME_BUDGET_MS", DEFAULT_INGEST_TIME_BUDGET_MS, 30000, 295000);
+  // Hasta 15 min: el script de GitHub Actions no tiene el límite de 300 s de Vercel.
+  return parseIntEnv("INGEST_TIME_BUDGET_MS", DEFAULT_INGEST_TIME_BUDGET_MS, 30000, 900000);
 }
 
 function normalizeShard(totalRaw: number | undefined, indexRaw: number | undefined): {
@@ -176,7 +184,10 @@ type PoolEntry = {
   id: string;
   titulo_canonico: string;
   resumen_canonico: string | null;
+  /** Centroide de los artículos. */
   embedding: number[] | null;
+  /** Embedding del artículo que fundó la historia: frena la deriva del centroide. */
+  seed: number[] | null;
   articleCount: number;
   ultimaPubMs: number;
   /** Artículos por medio en esta historia (para limitar cuántos aporta cada medio). */
@@ -189,7 +200,7 @@ async function loadHistoriasPool(
 ): Promise<PoolEntry[]> {
   const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 86400000).toISOString();
   const cols = withEmbeddings
-    ? "id, titulo_canonico, resumen_canonico, embedding, article_count, ultima_pub, created_at"
+    ? "id, titulo_canonico, resumen_canonico, embedding, seed_embedding, article_count, ultima_pub, created_at"
     : "id, titulo_canonico, resumen_canonico, article_count, ultima_pub, created_at";
   const { data, error } = await supabase
     .from("historias")
@@ -205,6 +216,7 @@ async function loadHistoriasPool(
     titulo_canonico: h.titulo_canonico as string,
     resumen_canonico: (h.resumen_canonico as string | null) ?? null,
     embedding: withEmbeddings ? parseVector(h.embedding) : null,
+    seed: withEmbeddings ? parseVector(h.seed_embedding) : null,
     articleCount: (h.article_count as number) ?? 0,
     ultimaPubMs: new Date((h.ultima_pub ?? h.created_at) as string).getTime(),
     porMedio: new Map(),
@@ -234,18 +246,21 @@ function isEligible(h: PoolEntry, medioId: string, pubMs: number): boolean {
   return (h.porMedio.get(medioId) ?? 0) < MAX_ARTICLES_PER_MEDIO_PER_HISTORIA;
 }
 
-function findBestHistoriaOpenAI(
+function findBestHistoriaEmbedding(
   pool: PoolEntry[],
   vec: number[],
   medioId: string,
   pubMs: number,
+  threshold: number,
 ): { id: string; score: number } | null {
-  const t = embeddingMatchThreshold();
   let best: { id: string; score: number } | null = null;
   for (const h of pool) {
     if (!h.embedding || !isEligible(h, medioId, pubMs)) continue;
-    const score = cosineSimilarity(vec, h.embedding);
-    if (score >= t && (!best || score > best.score)) {
+    // Debe parecerse al conjunto y al artículo fundador: sin esto, una historia larga
+    // (p. ej. una crisis en directo) acababa absorbiendo piezas de temas vecinos.
+    const toCentroid = cosineSimilarity(vec, h.embedding);
+    const score = h.seed ? Math.min(toCentroid, cosineSimilarity(vec, h.seed)) : toCentroid;
+    if (score >= threshold && (!best || score > best.score)) {
       best = { id: h.id, score };
     }
   }
@@ -350,8 +365,13 @@ export async function runIngest(
   const scheduledFeeds = pickShardFeeds(allFeeds, shard.total, shard.index);
   feedsScheduled = scheduledFeeds.length;
 
-  let embeddingsDisabled = false;
-  const pool = await loadHistoriasPool(supabase, clusterMode === "openai");
+  const embed = clusterMode === "lexical" ? null : (options.embed ?? (clusterMode === "openai" ? embedTexts : null));
+  const embeddingThreshold = embeddingMatchThreshold(clusterMode);
+  let embeddingsDisabled = !embed;
+  if (!embed && clusterMode !== "lexical") {
+    errors.push(`Modo ${clusterMode} sin función de embeddings: se agrupa por léxico.`);
+  }
+  const pool = await loadHistoriasPool(supabase, clusterMode !== "lexical");
   const poolById = new Map(pool.map((p) => [p.id, p]));
   const fetched = await fetchFeedsConcurrently(scheduledFeeds, deadlineMs);
 
@@ -422,9 +442,9 @@ export async function runIngest(
 
       // 2) Embeddings en una sola llamada por feed. Si OpenAI falla (cuota, red), se
       //    desactivan para el resto de la ejecución y se agrupa por léxico.
-      if (clusterMode === "openai" && !embeddingsDisabled && candidates.length > 0) {
+      if (embed && !embeddingsDisabled && candidates.length > 0) {
         try {
-          const embs = await embedTexts(
+          const embs = await embed(
             candidates.map((c) => pickTextForEmbedding(c.title, c.summary)),
           );
           candidates.forEach((c, i) => (c.embedding = embs[i] ?? null));
@@ -444,7 +464,9 @@ export async function runIngest(
           }
           const now = new Date().toISOString();
           const { embedding } = c;
-          let match = embedding ? findBestHistoriaOpenAI(pool, embedding, medio.id, c.pubMs) : null;
+          let match = embedding
+            ? findBestHistoriaEmbedding(pool, embedding, medio.id, c.pubMs, embeddingThreshold)
+            : null;
           if (!match) {
             match = findBestHistoriaLexical(pool, c.title, c.summary, lexicalThreshold, medio.id, c.pubMs);
           }
@@ -471,6 +493,8 @@ export async function runIngest(
                 titulo_canonico: c.title,
                 resumen_canonico: c.summary || null,
                 embedding,
+                // Solo con embedding: el modo léxico no depende de la columna nueva.
+                ...(embedding ? { seed_embedding: embedding } : {}),
                 importancia: 0,
                 primera_pub: c.fecha_pub ?? now,
                 ultima_pub: c.fecha_pub ?? now,
@@ -486,6 +510,7 @@ export async function runIngest(
               titulo_canonico: c.title,
               resumen_canonico: c.summary || null,
               embedding,
+              seed: embedding,
               articleCount: 1,
               ultimaPubMs: c.pubMs,
               porMedio: new Map([[medio.id, 1]]),
