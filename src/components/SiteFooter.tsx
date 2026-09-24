@@ -17,6 +17,15 @@ export function SiteFooter() {
           .
         </p>
         <nav aria-label="Legal" className="flex flex-wrap gap-4">
+          <a href="/metodologia" className={linkClass}>
+            Metodología
+          </a>
+          <a href="https://www.bocal.online/es/form" className={linkClass}>
+            Contacto
+          </a>
+          <a href="https://www.bocal.online/es/terms" className={linkClass}>
+            Aviso legal
+          </a>
           <a href="https://www.bocal.online/es/privacy" className={linkClass}>
             Privacidad
           </a>

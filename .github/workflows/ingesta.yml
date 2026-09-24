@@ -1,0 +1,40 @@
+# Ingesta de noticias cada 30 minutos con embeddings locales (gratis: el repo es público,
+# así que los minutos de GitHub Actions no tienen coste). Vercel Hobby solo permite un
+# disparo diario por cron y su función no admite el modelo local.
+name: Ingesta
+
+on:
+  schedule:
+    # :15 y :45 para no coincidir con los crons de Vercel, que van en punto.
+    - cron: "15,45 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ingesta
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      INGEST_CLUSTER_MODE: local
+      INGEST_TIME_BUDGET_MS: "780000"
+      TRANSFORMERS_CACHE_DIR: ${{ github.workspace }}/.cache/transformers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: .cache/transformers
+          key: transformers-multilingual-e5-small-q8-v1
+      - run: npm run ingest

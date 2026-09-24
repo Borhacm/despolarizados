@@ -35,6 +35,8 @@ function isSubscribedFlag(): boolean {
 export function ScrollSubscribeModal() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  /** Campo trampa: las personas no lo ven; si llega relleno, el servidor lo descarta. */
+  const [website, setWebsite] = useState("");
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "err">(
     "idle",
@@ -82,7 +84,7 @@ export function ScrollSubscribeModal() {
         const res = await fetch("/api/newsletter/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim(), frequency }),
+          body: JSON.stringify({ email: email.trim(), frequency, website }),
         });
         const data = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
@@ -102,7 +104,7 @@ export function ScrollSubscribeModal() {
         setMessage("Error de red. Inténtalo de nuevo.");
       }
     },
-    [email, frequency],
+    [email, frequency, website],
   );
 
   if (!open) return null;
@@ -139,6 +141,16 @@ export function ScrollSubscribeModal() {
             >
               Correo
             </label>
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
             <input
               id="newsletter-email"
               type="email"

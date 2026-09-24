@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchCoverageMixByHistoriaIds, type CoverageMix } from "@/lib/coverage-mix";
 import { fetchCoverImagesByHistoriaIds } from "@/lib/historia-covers";
 import { buildHistoriaUrl } from "@/lib/newsletter-resend";
+import { snippet } from "@/lib/snippet";
 
 const MAX_STORIES = 25;
 
@@ -46,7 +47,7 @@ export async function fetchHistoriasCargadasDesde(
   return rows.map((row) => ({
     id: row.id as string,
     titulo: row.titulo_canonico as string,
-    resumen: (row.resumen_canonico as string | null) ?? null,
+    resumen: row.resumen_canonico ? snippet(row.resumen_canonico as string) : null,
     url: buildHistoriaUrl(row.id as string),
     imageUrl: imageByHistoria.get(row.id) ?? null,
     coverageMix: coverageByHistoria.get(row.id) ?? null,

@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ADMIN_HUB_PATH } from "@/lib/admin-hub";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { ReactNode } from "react";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { LogoMark } from "@/components/LogoMark";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -29,7 +30,34 @@ const navItems: { href: string; label: string; match: (path: string) => boolean 
     },
   ];
 
-function NavAuth({ userEmail }: { userEmail: string | null }) {
+/**
+ * Email de la sesión leído en el navegador. El servidor no lee la sesión para que las
+ * páginas públicas se puedan cachear en la CDN sin mezclar datos de distintos usuarios.
+ */
+function useSessionEmail(): string | null {
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    let supabase: ReturnType<typeof createBrowserSupabase>;
+    try {
+      supabase = createBrowserSupabase();
+    } catch {
+      return;
+    }
+    void supabase.auth
+      .getSession()
+      .then(({ data }: { data: { session: Session | null } }) =>
+        setEmail(data.session?.user.email ?? null),
+      );
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      setEmail(session?.user.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+  return email;
+}
+
+function NavAuth() {
+  const userEmail = useSessionEmail();
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -90,7 +118,7 @@ function NavAuth({ userEmail }: { userEmail: string | null }) {
   );
 }
 
-export function Nav({ userEmail = null }: { userEmail?: string | null }) {
+export function Nav() {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
 
@@ -137,7 +165,7 @@ export function Nav({ userEmail = null }: { userEmail?: string | null }) {
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-0.5 sm:hidden">
-            <NavAuth userEmail={userEmail} />
+            <NavAuth />
             <ThemeToggle />
           </div>
         </div>
@@ -157,7 +185,7 @@ export function Nav({ userEmail = null }: { userEmail?: string | null }) {
             ))}
           </nav>
           <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
-            <NavAuth userEmail={userEmail} />
+            <NavAuth />
             <ThemeToggle />
           </div>
         </div>

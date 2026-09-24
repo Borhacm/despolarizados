@@ -11,7 +11,7 @@ config({
   quiet: true,
 });
 
-import { ingestRequiresOpenAI } from "../src/lib/ingest-mode";
+import { getIngestClusterMode, ingestRequiresOpenAI } from "../src/lib/ingest-mode";
 import { runIngest } from "../src/lib/ingest";
 import { createServiceClient } from "../src/lib/supabase/service";
 
@@ -23,9 +23,14 @@ async function main() {
     process.exit(1);
   }
   const supabase = createServiceClient();
-  const result = await runIngest(supabase);
+  const embed =
+    getIngestClusterMode() === "local"
+      ? (await import("./local-embeddings")).embedTextsLocal
+      : undefined;
+  const result = await runIngest(supabase, { embed });
   console.log(JSON.stringify(result, null, 2));
-  if (!result.ok) process.exit(1);
+  // Un feed caído no es un fallo de la ejecución; sí lo es no procesar ninguno.
+  if (result.feedsProcessed === 0) process.exit(1);
 }
 
 main().catch((e) => {

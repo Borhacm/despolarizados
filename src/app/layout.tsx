@@ -1,5 +1,4 @@
 import { Nav } from "@/components/Nav";
-import { createServerSupabaseOrNull } from "@/lib/supabase/server";
 import { NewsletterFlash } from "@/components/NewsletterFlash";
 import { ScrollSubscribeModal } from "@/components/ScrollSubscribeModal";
 import { AnalyticsConsent } from "@/components/AnalyticsConsent";
@@ -52,20 +51,11 @@ export const viewport: Viewport = {
 
 const themeInitScript = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var t=localStorage.getItem(k);if(t==="dark"){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}}catch(e){}})();`;
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createServerSupabaseOrNull();
-  let userEmail: string | null = null;
-  if (supabase) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    userEmail = user?.email ?? null;
-  }
-
   return (
     <html
       lang="es"
@@ -77,7 +67,7 @@ export default async function RootLayout({
           {themeInitScript}
         </Script>
         <AnalyticsConsent />
-        <Nav userEmail={userEmail} />
+        <Nav />
         <Suspense fallback={null}>
           <NewsletterFlash />
         </Suspense>

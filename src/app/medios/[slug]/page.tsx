@@ -117,9 +117,6 @@ export default async function MedioDetailPage(props: PageProps) {
                   <span className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
                     Sesgo: {medio.sesgo}
                   </span>
-                  <span className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
-                    Factualidad: {medio.factualidad}
-                  </span>
                   <span className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
                     Prioridad ingesta: {medio.prioridad}
                   </span>
