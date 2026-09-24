@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/newsletter-digest",
-      "schedule": "30 15 * * *"
+      "schedule": "0 5 * * *"
     },
     {
       "path": "/api/cron/instagram-brief",

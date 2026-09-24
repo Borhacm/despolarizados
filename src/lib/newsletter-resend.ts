@@ -5,6 +5,8 @@ type SendEmailParams = {
   to: string;
   subject: string;
   html: string;
+  /** URL de baja: se añade como List-Unsubscribe (Gmail y Yahoo lo exigen en envíos masivos). */
+  unsubscribeUrl?: string;
 };
 
 const RESEND_API = "https://api.resend.com/emails";
@@ -38,6 +40,14 @@ export async function sendNewsletterEmail(
       to: [params.to],
       subject: params.subject,
       html: params.html,
+      ...(params.unsubscribeUrl
+        ? {
+            headers: {
+              "List-Unsubscribe": `<${params.unsubscribeUrl}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+          }
+        : {}),
     }),
   });
 
@@ -69,118 +79,6 @@ export function verificationEmailHtml(params: {
 </html>`;
 }
 
-export function digestEmailHtml(params: {
-  title: string;
-  items: {
-    url: string;
-    titulo: string;
-    resumen: string | null;
-    imageUrl: string | null;
-    coverageMix: CoverageMix | null;
-  }[];
-  unsubscribeUrl: string;
-}): string {
-  const todayLabel = new Date().toLocaleDateString("es-ES", {
-    timeZone: "Europe/Madrid",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  const rows = params.items
-    .map(
-      (i) => `
-  <tr>
-    <td style="padding: 0 14px 10px 14px;">
-      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: separate; border-spacing: 0; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 10px;">
-        <tr>
-          <td style="padding: 10px 10px 9px 10px;">
-            ${
-              i.imageUrl
-                ? `<a href="${escapeAttribute(i.url)}" style="display:block; margin:0 0 8px 0;">
-              <img
-                src="${escapeAttribute(i.imageUrl)}"
-                alt="${escapeAttribute(i.titulo)}"
-                width="560"
-                style="display:block; width:100%; height:auto; border: 1px solid #d1d5db; border-radius: 6px;"
-              />
-            </a>`
-                : ""
-            }
-            <a href="${escapeAttribute(i.url)}" style="font-size: 17px; line-height: 1.2; color: #111827; text-decoration: none; font-weight: 700;">
-              ${escapeHtml(i.titulo)}
-            </a>
-            <p style="margin: 6px 0 0 0; color: #374151; font-size: 12px; line-height: 1.33;">
-              ${escapeHtml(compactExcerpt(i.resumen))}
-            </p>
-            ${coverageBarEmailHtml(i.coverageMix)}
-            ${coverageChipsEmailHtml(i.coverageMix)}
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>`,
-    )
-    .join("");
-
-  return `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-</head>
-<body style="margin: 0; padding: 0; background: #e5e7eb; font-family: Arial, Helvetica, sans-serif; color: #111827;">
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-    <tr>
-      <td align="center" style="padding: 12px 8px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; border-collapse: collapse; background: #ffffff; border: 1px solid #bfc5ce;">
-          <tr>
-            <td style="padding: 10px 14px; border-bottom: 1px solid #d1d5db; background: #f3f4f6;">
-              <img
-                src="${escapeAttribute(getAppBaseUrl())}/logo.svg"
-                alt="Despolarizados"
-                width="156"
-                height="26"
-                style="display: block; height: auto; border: 0; margin: 0 0 7px 0;"
-              />
-              <p style="margin: 0; font-size: 11px; color: #6b7280; font-weight: 700; letter-spacing: 0.02em;">
-                Despolarizados Digest
-              </p>
-              <h1 style="margin: 4px 0 0 0; font-size: 22px; line-height: 1.12; color: #047857;">
-                ${escapeHtml(params.title)}
-              </h1>
-              <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">
-                ${escapeHtml(todayLabel)}
-              </p>
-            </td>
-          </tr>
-          ${rows}
-          <tr>
-            <td style="padding: 4px 14px 12px 14px;">
-              <a href="${escapeAttribute(
-                getAppBaseUrl(),
-              )}" style="display: inline-block; border: 1px solid #111827; background: #111827; color: #ffffff; padding: 7px 12px; text-decoration: none; font-size: 12px; border-radius: 3px; font-weight: 700;">
-                Ver portada
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 14px 12px 14px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 10px 0 0 0; font-size: 11px; color: #6b7280;">
-                Si no quieres recibir este correo, puedes
-                <a href="${escapeAttribute(params.unsubscribeUrl)}" style="color: #6b7280; text-decoration: underline;">darte de baja aquí</a>.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-}
-
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -191,14 +89,6 @@ function escapeHtml(s: string): string {
 
 function escapeAttribute(s: string): string {
   return escapeHtml(s).replace(/'/g, "&#39;");
-}
-
-function compactExcerpt(resumen: string | null): string {
-  const raw = (resumen ?? "").trim().replace(/\s+/g, " ");
-  if (!raw) return "Sin resumen disponible.";
-  const MAX = 180;
-  if (raw.length <= MAX) return raw;
-  return `${raw.slice(0, MAX - 1).trimEnd()}...`;
 }
 
 /** Misma paleta que `CoverageMixBar` / OG (`historia-share-image`). */
@@ -234,13 +124,119 @@ function coverageBarEmailHtml(mix: CoverageMix | null): string {
   return `
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 8px; border-collapse: collapse; border: 1px solid #d4d4d8; border-radius: 9999px; overflow: hidden; background: ${c.track};">
   <tr>
-    <td style="height: 10px; width: ${izqPct}%; background: ${c.izq}; font-size: 0; line-height: 0;">&nbsp;</td>
-    <td style="height: 10px; width: ${centroPct}%; background: ${c.centro}; font-size: 0; line-height: 0;">&nbsp;</td>
-    <td style="height: 10px; width: ${derPct}%; background: ${c.der}; font-size: 0; line-height: 0;">&nbsp;</td>
+    ${[
+      [izqPct, c.izq],
+      [centroPct, c.centro],
+      [derPct, c.der],
+    ]
+      .filter(([pct]) => Number(pct) > 0)
+      .map(
+        ([pct, color]) =>
+          `<td style="height: 10px; width: ${pct}%; background: ${color}; font-size: 0; line-height: 0;">&nbsp;</td>`,
+      )
+      .join("")}
   </tr>
 </table>`;
 }
 
 export function buildHistoriaUrl(id: string): string {
   return `${getAppBaseUrl()}/historia/${id}`;
+}
+
+export type EmailItem = {
+  url: string;
+  titulo: string;
+  resumen: string | null;
+  imageUrl: string | null;
+  medioCount: number;
+  coverageMix: CoverageMix | null;
+};
+
+export type EmailSection = {
+  heading: string;
+  intro?: string;
+  items: EmailItem[];
+  /** Imágenes solo en la sección principal: el correo pesa menos y carga antes. */
+  withImages?: boolean;
+};
+
+function itemHtml(i: EmailItem, withImage: boolean): string {
+  const image =
+    withImage && i.imageUrl
+      ? `<a href="${escapeAttribute(i.url)}" style="display:block; margin:0 0 10px 0;"><img src="${escapeAttribute(i.imageUrl)}" alt="" width="560" style="display:block; width:100%; height:auto; border-radius: 6px;" /></a>`
+      : "";
+  return `
+  <tr>
+    <td style="padding: 0 20px 18px 20px;">
+      ${image}
+      <a href="${escapeAttribute(i.url)}" style="font-size: 17px; line-height: 1.3; color: #111827; text-decoration: none; font-weight: 700;">${escapeHtml(i.titulo)}</a>
+      ${i.resumen ? `<p style="margin: 6px 0 0 0; color: #374151; font-size: 14px; line-height: 1.45;">${escapeHtml(i.resumen)}</p>` : ""}
+      <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">${i.medioCount} medios · <a href="${escapeAttribute(i.url)}" style="color: #047857;">Comparar titulares</a></p>
+      ${coverageBarEmailHtml(i.coverageMix)}
+      ${coverageChipsEmailHtml(i.coverageMix)}
+    </td>
+  </tr>`;
+}
+
+/** Correo de una edición (diaria o semanal) organizada por secciones. */
+export function editionEmailHtml(params: {
+  kicker: string;
+  title: string;
+  dateLabel: string;
+  sections: EmailSection[];
+  unsubscribeUrl: string;
+}): string {
+  const base = getAppBaseUrl();
+  const sections = params.sections
+    .filter((sec) => sec.items.length > 0)
+    .map(
+      (sec) => `
+  <tr>
+    <td style="padding: 22px 20px 10px 20px;">
+      <h2 style="margin: 0; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #047857;">${escapeHtml(sec.heading)}</h2>
+      ${sec.intro ? `<p style="margin: 6px 0 0 0; font-size: 13px; color: #6b7280; line-height: 1.4;">${escapeHtml(sec.intro)}</p>` : ""}
+    </td>
+  </tr>
+  ${sec.items.map((i) => itemHtml(i, Boolean(sec.withImages))).join("")}`,
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+<body style="margin: 0; padding: 0; background: #f3f4f6; font-family: Arial, Helvetica, sans-serif; color: #111827;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 16px 8px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; border-collapse: collapse; background: #ffffff; border-radius: 10px;">
+          <tr>
+            <td style="padding: 20px 20px 16px 20px; border-bottom: 1px solid #e5e7eb;">
+              <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+                <td style="padding-right: 10px;"><img src="${escapeAttribute(base)}/apple-icon" alt="" width="36" height="36" style="display:block; border-radius: 8px;" /></td>
+                <td style="font-size: 16px; font-weight: 700; color: #111827;">Despolarizados</td>
+              </tr></table>
+              <p style="margin: 14px 0 0 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; font-weight: 700;">${escapeHtml(params.kicker)}</p>
+              <h1 style="margin: 4px 0 0 0; font-size: 24px; line-height: 1.2; color: #111827;">${escapeHtml(params.title)}</h1>
+              <p style="margin: 6px 0 0 0; font-size: 13px; color: #6b7280;">${escapeHtml(params.dateLabel)}</p>
+            </td>
+          </tr>
+          ${sections}
+          <tr>
+            <td style="padding: 8px 20px 22px 20px;">
+              <a href="${escapeAttribute(base)}" style="display: inline-block; background: #111827; color: #ffffff; padding: 10px 16px; text-decoration: none; font-size: 14px; border-radius: 999px; font-weight: 700;">Ver todas las historias</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 14px 20px 20px 20px; border-top: 1px solid #e5e7eb; font-size: 12px; line-height: 1.5; color: #6b7280;">
+              La orientación de cada medio es una clasificación propia y orientativa (<a href="${escapeAttribute(base)}/metodologia" style="color: #6b7280;">cómo funciona</a>).
+              Despolarizados es un proyecto de <a href="https://www.bocal.online/es" style="color: #6b7280;">Bocalma</a>.<br />
+              <a href="${escapeAttribute(params.unsubscribeUrl)}" style="color: #6b7280;">Darme de baja</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }

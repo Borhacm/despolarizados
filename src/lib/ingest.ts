@@ -7,6 +7,7 @@ import { getIngestClusterMode, type IngestClusterMode } from "@/lib/ingest-mode"
 import { shouldExcludeLowValueNews } from "@/lib/ingest-relevance";
 import { lexicalClusteringScore, parseLexicalThreshold } from "@/lib/title-similarity";
 import { cosineSimilarity, mergeEmbeddings, parseVector } from "@/lib/vector";
+import { decodeHtmlEntities } from "@/lib/html-entities";
 import { snippet, SNIPPET_STORE_CHARS } from "@/lib/snippet";
 
 /**
@@ -321,7 +322,7 @@ async function fetchFeedsConcurrently<T extends { feedUrl: string }>(
 
 function summaryFromItem(item: Item): string {
   const text = (item.contentSnippet ?? item.summary ?? item.content ?? "").replace(/<[^>]+>/g, " ");
-  return snippet(text, SNIPPET_STORE_CHARS);
+  return snippet(decodeHtmlEntities(text), SNIPPET_STORE_CHARS);
 }
 
 function imageFromItem(item: Item): string | null {
@@ -415,7 +416,7 @@ export async function runIngest(
       for (const item of items) {
         itemsSeen += 1;
         const url = item.link?.trim();
-        const title = (item.title ?? "").trim();
+        const title = decodeHtmlEntities(item.title ?? "").trim();
         if (!url || !title) continue;
         if (known.has(url)) {
           skippedDuplicate += 1;
