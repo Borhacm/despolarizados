@@ -25,17 +25,21 @@ async function pruneLowValueArticles(
 ): Promise<{ deleted: number; historiasTouched: number; historiasRemoved: number }> {
   const historiaTouched = new Set<string>();
   let deleted = 0;
-  let from = 0;
+  // Cursor por id: paginar por posición saltaba filas al borrar las de la página anterior.
+  let lastId: string | null = null;
   for (;;) {
-    const { data, error } = await supabase
+    let q = supabase
       .from("articulos")
       .select("id, titulo, resumen, historia_id")
       .order("id", { ascending: true })
-      .range(from, from + PAGE - 1);
+      .limit(PAGE);
+    if (lastId) q = q.gt("id", lastId);
+    const { data, error } = await q;
 
     if (error) throw error;
     const rows = (data ?? []) as ArtRow[];
     if (rows.length === 0) break;
+    lastId = rows[rows.length - 1]!.id;
 
     const toDelete: string[] = [];
     for (const r of rows) {
@@ -52,7 +56,6 @@ async function pruneLowValueArticles(
       deleted += chunk.length;
     }
 
-    from += PAGE;
     if (rows.length < PAGE) break;
   }
 
