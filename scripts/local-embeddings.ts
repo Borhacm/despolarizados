@@ -1,35 +1,57 @@
 /**
- * Embeddings multilingües locales con transformers.js (modelo multilingual-e5-small,
- * 384 dimensiones). Vive fuera de `src/` a propósito: solo lo importa la ingesta por
- * script (GitHub Actions); si lo importara una ruta de Next, el modelo y onnxruntime
+ * Embeddings multilingües locales (multilingual-e5-small, 384 dimensiones) calculados en
+ * un proceso hijo (`embed-child.ts`). Vive fuera de `src/` a propósito: solo lo usan los
+ * scripts (GitHub Actions); si lo importara una ruta de Next, el modelo y onnxruntime
  * entrarían en las funciones de Vercel y superarían su tamaño máximo.
  */
-const MODEL = process.env.LOCAL_EMBEDDING_MODEL ?? "Xenova/multilingual-e5-small";
-const BATCH = 64;
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { resolve } from "node:path";
+import { createInterface } from "node:readline";
 
-type Extractor = (
-  texts: string[],
-  opts: { pooling: "mean"; normalize: boolean },
-) => Promise<{ tolist(): number[][] }>;
+let child: ChildProcessWithoutNullStreams | null = null;
+let nextId = 0;
+const pending = new Map<number, { ok: (e: number[][]) => void; fail: (err: Error) => void }>();
 
-let extractor: Extractor | null = null;
-
-async function load(): Promise<Extractor> {
-  if (extractor) return extractor;
-  const { pipeline, env } = await import("@huggingface/transformers");
-  if (process.env.TRANSFORMERS_CACHE_DIR) env.cacheDir = process.env.TRANSFORMERS_CACHE_DIR;
-  extractor = (await pipeline("feature-extraction", MODEL, { dtype: "q8" })) as unknown as Extractor;
-  return extractor;
+function ensureChild(): ChildProcessWithoutNullStreams {
+  if (child) return child;
+  const script = resolve(__dirname, "embed-child.ts");
+  child = spawn(process.execPath, ["--import", "tsx", script], {
+    env: process.env,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  child.stderr.on("data", (d: Buffer) => {
+    const msg = d.toString();
+    if (!/^dtype|mutex lock failed/.test(msg)) process.stderr.write(msg);
+  });
+  createInterface({ input: child.stdout }).on("line", (line) => {
+    const msg = JSON.parse(line) as { id: number; embs?: number[][]; error?: string };
+    const p = pending.get(msg.id);
+    if (!p) return;
+    pending.delete(msg.id);
+    if (msg.error || !msg.embs) p.fail(new Error(msg.error ?? "sin embeddings"));
+    else p.ok(msg.embs);
+  });
+  child.on("exit", (code) => {
+    for (const p of pending.values()) p.fail(new Error(`proceso de embeddings terminado (${code})`));
+    pending.clear();
+    child = null;
+  });
+  return child;
 }
 
-export async function embedTextsLocal(texts: string[]): Promise<number[][]> {
-  const fx = await load();
-  const out: number[][] = [];
-  for (let i = 0; i < texts.length; i += BATCH) {
-    // e5 espera el prefijo «query: » también en comparaciones simétricas.
-    const chunk = texts.slice(i, i + BATCH).map((t) => `query: ${t.replace(/\s+/g, " ").trim()}`);
-    const res = await fx(chunk, { pooling: "mean", normalize: true });
-    out.push(...res.tolist());
-  }
-  return out;
+export function embedTextsLocal(texts: string[]): Promise<number[][]> {
+  if (texts.length === 0) return Promise.resolve([]);
+  const c = ensureChild();
+  const id = nextId++;
+  return new Promise((ok, fail) => {
+    pending.set(id, { ok, fail });
+    c.stdin.write(`${JSON.stringify({ id, texts })}\n`);
+  });
+}
+
+/** Cierra el proceso hijo; así el script principal termina limpio. */
+export async function disposeLocalEmbeddings(): Promise<void> {
+  if (!child) return;
+  child.kill("SIGKILL");
+  child = null;
 }

@@ -32,6 +32,7 @@ async function main() {
   // Un feed caído no es un fallo de la ejecución; sí lo es no procesar ninguno.
   // Salida explícita: onnxruntime (modo local) deja hilos vivos y el proceso no
   // terminaba; en GitHub Actions eso agotaba el tiempo del job.
+  if (embed) await (await import("./local-embeddings")).disposeLocalEmbeddings();
   process.exit(result.feedsProcessed === 0 ? 1 : 0);
 }
 

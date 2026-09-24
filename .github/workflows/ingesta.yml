@@ -19,7 +19,7 @@ permissions:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -38,3 +38,5 @@ jobs:
           path: .cache/transformers
           key: transformers-multilingual-e5-small-q8-v1
       - run: npm run ingest
+      # Une historias del mismo hecho que la ingesta dejó partidas (últimos 3 días).
+      - run: npm run reagrupar -- 3 --apply

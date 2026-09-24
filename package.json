@@ -14,7 +14,8 @@
     "dedupe-historias": "node --import tsx scripts/dedupe-historias.ts",
     "reingest:prune": "node --import tsx scripts/reingest-and-prune.ts",
     "recompute:recientes": "node --import tsx scripts/recompute-recientes.ts",
-    "reingest-and-prune": "node --import tsx scripts/reingest-and-prune.ts"
+    "reingest-and-prune": "node --import tsx scripts/reingest-and-prune.ts",
+    "reagrupar": "node --import tsx scripts/reagrupar.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
