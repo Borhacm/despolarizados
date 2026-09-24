@@ -23,6 +23,7 @@ import {
   buildWhatsAppShareUrl,
 } from "@/lib/share/social-share-urls";
 import { sharePngBlobWithWebShareOrDownload } from "@/lib/share/web-share-png-blob";
+import { track } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type HistoriaShareOptionsProps = {
@@ -122,13 +123,14 @@ export function HistoriaShareOptions({
   }, [url]);
 
   const onCopyUrl = useCallback(() => {
+    track("share", { method: "copy_link", historia_id: historiaId });
     setShowIgManual(false);
     setError(null);
     void copyUrlToClipboardAsync().then((ok) => {
       if (ok) flash("Enlace copiado.");
       else window.prompt("Copia el enlace:", url);
     });
-  }, [copyUrlToClipboardAsync, flash, url]);
+  }, [copyUrlToClipboardAsync, flash, historiaId, url]);
 
   const fetchPng = useCallback(async (path: string) => {
     const res = await fetch(path, { cache: "no-store" });
@@ -137,6 +139,7 @@ export function HistoriaShareOptions({
   }, []);
 
   const onShareOgPng = useCallback(async () => {
+    track("share", { method: "image_horizontal", historia_id: historiaId });
     setOgBusy(true);
     setError(null);
     try {
@@ -168,6 +171,7 @@ export function HistoriaShareOptions({
   ]);
 
   const onStoryImage = useCallback(async () => {
+    track("share", { method: "image_vertical", historia_id: historiaId });
     setStoryBusy(true);
     setError(null);
     try {
@@ -213,6 +217,7 @@ export function HistoriaShareOptions({
    * escritorio descargamos la imagen. En ambos casos el texto queda copiado para el pie.
    */
   const onInstagram = useCallback(async () => {
+    track("share", { method: "instagram", historia_id: historiaId });
     setIgBusy(true);
     setError(null);
     setIgHint(null);
@@ -267,6 +272,7 @@ export function HistoriaShareOptions({
       onCopyUrl();
       return;
     }
+    track("share", { method: "native", historia_id: historiaId });
     setShareBusy(true);
     setError(null);
     try {
@@ -281,7 +287,7 @@ export function HistoriaShareOptions({
     } finally {
       setShareBusy(false);
     }
-  }, [onCopyUrl, title, url]);
+  }, [historiaId, onCopyUrl, title, url]);
 
   const hasNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -415,6 +421,7 @@ export function HistoriaShareOptions({
               rel="noopener noreferrer"
               aria-label={label}
               title={label}
+              onClick={() => track("share", { method: key, historia_id: historiaId })}
               className={iconBtnBase}
             >
               <Icon className="h-5 w-5" />

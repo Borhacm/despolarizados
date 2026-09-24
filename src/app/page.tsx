@@ -479,11 +479,18 @@ function HomeOrderTabs({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Link href={mkHref("ultimas")} className={tabClass(orden === "ultimas")}>
+      <Link
+        href={mkHref("ultimas")}
+        data-ev="sort_change"
+        data-ev-orden="ultimas"
+        className={tabClass(orden === "ultimas")}
+      >
         Ultimas
       </Link>
       <Link
         href={mkHref("relevantes")}
+        data-ev="sort_change"
+        data-ev-orden="relevantes"
         className={tabClass(orden === "relevantes")}
       >
         Mas relevantes

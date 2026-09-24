@@ -135,11 +135,18 @@ export function StoryCard({
   );
 
   const href = `/historia/${h.id}`;
+  // Medición: qué tipo de tarjeta lleva a abrir historias (ver src/lib/analytics.ts).
+  const evProps = {
+    "data-ev": "story_open",
+    "data-ev-historia-id": h.id,
+    "data-ev-tipo": isFeatured ? "destacada" : blindspotHint ? "angulo_muerto" : "lista",
+  };
 
   const dateRow = (
     <div className="flex min-h-[1.25rem] w-full min-w-0 items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400">
       <div className="min-w-0 shrink">
         <Link
+          {...evProps}
           href={href}
           className="block min-w-0 hover:text-emerald-700 dark:hover:text-emerald-300"
         >
@@ -217,12 +224,13 @@ export function StoryCard({
 
   const inner = isSplit ? (
     <>
-      <Link href={href} className={splitLeftColClass}>
+      <Link {...evProps} href={href} className={splitLeftColClass}>
         {mediaBlock}
       </Link>
       <div className={bodySplit}>
         {dateRow}
         <Link
+          {...evProps}
           href={href}
           className={
             isFeatured
@@ -237,13 +245,14 @@ export function StoryCard({
   ) : (
     <>
       {coverUrl ? (
-        <Link href={href} className="block">
+        <Link {...evProps} href={href} className="block">
           {mediaBlock}
         </Link>
       ) : null}
       <div className={bodyStack}>
         {dateRow}
         <Link
+          {...evProps}
           href={href}
           className={
             isFeatured

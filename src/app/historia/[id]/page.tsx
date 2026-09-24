@@ -12,7 +12,7 @@ import {
 } from "@/lib/share/historia-og-metadata-text";
 import { formatDateTimeEs } from "@/lib/format";
 import { createPublicClient } from "@/lib/supabase/public";
-import { sesgoToPosition } from "@/lib/sesgo";
+import { sesgoLabelShort, sesgoToPosition } from "@/lib/sesgo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -270,6 +270,10 @@ export default async function HistoriaPage(props: PageProps) {
                 </div>
                 <a
                   href={a.url}
+                  data-ev="outbound_click"
+                  data-ev-medio={m?.nombre}
+                  data-ev-lado={m?.sesgo ? sesgoLabelShort(m.sesgo) : undefined}
+                  data-ev-historia-id={id}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 block break-words text-sm font-medium text-emerald-800 underline-offset-2 hover:underline dark:text-emerald-200"
@@ -333,6 +337,10 @@ export default async function HistoriaPage(props: PageProps) {
                       <td className="px-4 py-3">
                         <a
                           href={a.url}
+                          data-ev="outbound_click"
+                          data-ev-medio={m?.nombre}
+                          data-ev-lado={m?.sesgo ? sesgoLabelShort(m.sesgo) : undefined}
+                          data-ev-historia-id={id}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-medium text-emerald-800 hover:underline dark:text-emerald-200"

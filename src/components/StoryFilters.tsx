@@ -145,7 +145,7 @@ export function StoryFilters({
     ) : null;
 
   const formEl = (
-    <form method="get" action={action} className={formClass}>
+    <form method="get" action={action} className={formClass} data-ev="filter_use">
         <div className="min-w-0 w-full lg:flex-[2_1_16rem]">
           <label htmlFor={`q-${idBase}`} className={labelClass}>
             Buscar

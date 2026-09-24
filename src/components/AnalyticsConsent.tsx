@@ -62,12 +62,18 @@ export function AnalyticsConsent() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!readConsent()) setOpen(true);
+    // La cookie solo existe en el navegador: se lee tras el primer pintado.
+    const frame = requestAnimationFrame(() => {
+      if (!readConsent()) setOpen(true);
+    });
     const onClick = (e: MouseEvent) => {
       if ((e.target as Element | null)?.closest?.("[data-open-consent]")) setOpen(true);
     };
     document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("click", onClick);
+    };
   }, []);
 
   const decide = (value: Consent) => {

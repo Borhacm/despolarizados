@@ -2,6 +2,7 @@ import { Nav } from "@/components/Nav";
 import { NewsletterFlash } from "@/components/NewsletterFlash";
 import { ScrollSubscribeModal } from "@/components/ScrollSubscribeModal";
 import { AnalyticsConsent } from "@/components/AnalyticsConsent";
+import { AnalyticsEvents } from "@/components/AnalyticsEvents";
 import { SiteFooter } from "@/components/SiteFooter";
 import { THEME_STORAGE_KEY } from "@/lib/theme-storage";
 import { getAppBaseUrl } from "@/lib/app-base-url";
@@ -67,6 +68,7 @@ export default function RootLayout({
           {themeInitScript}
         </Script>
         <AnalyticsConsent />
+        <AnalyticsEvents />
         <Nav />
         <Suspense fallback={null}>
           <NewsletterFlash />

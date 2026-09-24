@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@/lib/analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const STORAGE_DISMISS = "despolarizados_newsletter_dismissed_until";
@@ -97,6 +98,7 @@ export function ScrollSubscribeModal() {
           return;
         }
         setStatus("done");
+        track("newsletter_signup", { frecuencia: frequency, ubicacion: "modal_scroll" });
         setMessage(data.message ?? "Revisa tu correo.");
         window.setTimeout(() => setOpen(false), 4000);
       } catch {

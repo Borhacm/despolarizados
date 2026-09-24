@@ -6,6 +6,7 @@ import {
   serializeFeedSlugs,
 } from "@/lib/feed-cookie";
 import { useRouter } from "next/navigation";
+import { track } from "@/lib/analytics";
 import { useCallback, useState } from "react";
 
 function readCookie(name: string): string {
@@ -31,6 +32,7 @@ export function FollowMedioButton({
 
   const toggle = useCallback(async () => {
     setPending(true);
+    track("follow_medio", { medio: slug, accion: following ? "dejar" : "seguir" });
     try {
       if (accountMode) {
         const res = await fetch("/api/feed/follow", {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { track } from "@/lib/analytics";
 import { useCallback, useState } from "react";
 
 /**
@@ -39,6 +40,7 @@ export function FeedEmailSignup() {
           return;
         }
         setStatus("done");
+        track("newsletter_signup", { frecuencia: frequency, ubicacion: "para_ti" });
         setMessage(
           data.message ??
             "Revisa tu correo y abre el enlace para confirmar.",

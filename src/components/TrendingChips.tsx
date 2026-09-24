@@ -33,6 +33,9 @@ export function TrendingChips({
         <li key={`${term.q}-${i}`} className="min-w-0 max-w-full">
           <Link
             href={`${base}?q=${encodeURIComponent(term.q)}`}
+            data-ev="trending_click"
+            data-ev-termino={term.q}
+            data-ev-posicion={i + 1}
             className={chipLinkClass}
           >
             <span
