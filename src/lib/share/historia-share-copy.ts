@@ -3,7 +3,7 @@ const BRAND_SUFFIX = "Despolarizados";
 /** Texto corto para tweets y mensajes (marca al final). */
 export function historiaShareSnippet(title: string): string {
   const t = title.trim();
-  return `${t} — ${BRAND_SUFFIX}`;
+  return `${t} · ${BRAND_SUFFIX}`;
 }
 
 /** Leyenda Instagram: titular + URL en líneas separadas (mejor pegado en la app). */

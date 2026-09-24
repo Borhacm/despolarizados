@@ -30,7 +30,9 @@ async function main() {
   const result = await runIngest(supabase, { embed });
   console.log(JSON.stringify(result, null, 2));
   // Un feed caído no es un fallo de la ejecución; sí lo es no procesar ninguno.
-  if (result.feedsProcessed === 0) process.exit(1);
+  // Salida explícita: onnxruntime (modo local) deja hilos vivos y el proceso no
+  // terminaba; en GitHub Actions eso agotaba el tiempo del job.
+  process.exit(result.feedsProcessed === 0 ? 1 : 0);
 }
 
 main().catch((e) => {

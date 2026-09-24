@@ -4,6 +4,7 @@ import { HistoriaShareOgPreview } from "@/components/share/HistoriaShareOgPrevie
 import {
   IconFacebook,
   IconImage,
+  IconInstagram,
   IconLinkedIn,
   IconLink,
   IconReddit,
@@ -31,19 +32,15 @@ export type HistoriaShareOptionsProps = {
   variant?: "bar" | "modal";
 };
 
-/** Misma base que los enlaces compartidos (`url` = página de la historia). */
-function useAssetPngUrls(historiaId: string, historiaPageUrl: string) {
-  return useMemo(() => {
-    const ogPath = `/historia/${historiaId}/opengraph-image`;
-    const storyPath = `/historia/${historiaId}/story-image`;
-    try {
-      const u = new URL(historiaPageUrl);
-      const origin = `${u.protocol}//${u.host}`;
-      return { og: `${origin}${ogPath}`, story: `${origin}${storyPath}` };
-    } catch {
-      return { og: ogPath, story: storyPath };
-    }
-  }, [historiaId, historiaPageUrl]);
+/**
+ * Rutas relativas: la imagen se pide siempre al mismo origen que la página. Con la URL
+ * canónica fallaba en previews de Vercel y en local (otro host u otro puerto).
+ */
+function assetPngPaths(historiaId: string) {
+  return {
+    og: `/historia/${historiaId}/opengraph-image`,
+    story: `/historia/${historiaId}/story-image`,
+  };
 }
 
 const iconBtnBase =
@@ -60,6 +57,8 @@ export function HistoriaShareOptions({
   const [ogBusy, setOgBusy] = useState(false);
   const [storyBusy, setStoryBusy] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [igBusy, setIgBusy] = useState(false);
+  const [igHint, setIgHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mobileUi, setMobileUi] = useState(false);
 
@@ -68,7 +67,7 @@ export function HistoriaShareOptions({
   }, []);
 
   const igCaption = historiaInstagramCaption(title, url);
-  const fetchPaths = useAssetPngUrls(historiaId, url);
+  const fetchPaths = useMemo(() => assetPngPaths(historiaId), [historiaId]);
 
   const linkItems = useMemo(
     () =>
@@ -130,24 +129,6 @@ export function HistoriaShareOptions({
       else window.prompt("Copia el enlace:", url);
     });
   }, [copyUrlToClipboardAsync, flash, url]);
-
-  const onCopyInstagramCaption = useCallback(() => {
-    setShowIgManual(false);
-    setError(null);
-
-    if (copyTextToClipboard(igCaption)) {
-      flash("Texto copiado.");
-      return;
-    }
-    if (navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(igCaption).then(
-        () => flash("Texto copiado."),
-        () => setShowIgManual(true),
-      );
-      return;
-    }
-    setShowIgManual(true);
-  }, [flash, igCaption]);
 
   const fetchPng = useCallback(async (path: string) => {
     const res = await fetch(path, { cache: "no-store" });
@@ -226,6 +207,58 @@ export function HistoriaShareOptions({
     url,
   ]);
 
+  /**
+   * Instagram no admite compartir enlaces desde la web. En móvil abrimos el menú nativo
+   * con la imagen vertical (desde ahí se elige Instagram, Stories o publicación); en
+   * escritorio descargamos la imagen. En ambos casos el texto queda copiado para el pie.
+   */
+  const onInstagram = useCallback(async () => {
+    setIgBusy(true);
+    setError(null);
+    setIgHint(null);
+    const copied =
+      copyTextToClipboard(igCaption) ||
+      (await navigator.clipboard?.writeText(igCaption).then(
+        () => true,
+        () => false,
+      )) ||
+      false;
+    if (!copied) setShowIgManual(true);
+    try {
+      const blob = await fetchPng(fetchPaths.story);
+      const file = new File([blob], `despolarizados-${historiaId.slice(0, 8)}.png`, {
+        type: "image/png",
+      });
+      if (mobileUi && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          setIgHint(
+            copied
+              ? "Elige Instagram en el menú. El texto con el enlace ya está copiado: pégalo en el pie o en un sticker de enlace."
+              : "Elige Instagram en el menú.",
+          );
+          return;
+        } catch (e) {
+          if ((e as { name?: string })?.name === "AbortError") return;
+        }
+      }
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = file.name;
+      a.rel = "noopener";
+      a.click();
+      window.setTimeout(() => URL.revokeObjectURL(href), 0);
+      setIgHint(
+        `Imagen vertical descargada${copied ? " y texto copiado" : ""}. Súbela a Instagram (Stories o publicación)${copied ? " y pega el texto en el pie" : ""}.`,
+      );
+    } catch {
+      setError("No se pudo preparar la imagen para Instagram (revisa la red).");
+    } finally {
+      setIgBusy(false);
+    }
+  }, [fetchPaths.story, fetchPng, historiaId, igCaption, mobileUi]);
+
   const onNativeShare = useCallback(async () => {
     if (
       typeof navigator === "undefined" ||
@@ -257,9 +290,6 @@ export function HistoriaShareOptions({
     variant === "modal"
       ? "inline-flex min-h-[44px] flex-1 basis-[calc(50%-0.25rem)] items-center justify-center gap-2 rounded-xl border border-zinc-200/90 bg-zinc-50/90 px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-300 hover:bg-white disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-emerald-700"
       : "inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200/90 bg-zinc-50/90 px-2 py-2 text-xs font-semibold text-zinc-800 shadow-sm transition hover:border-emerald-300 disabled:opacity-60 sm:min-h-0 sm:max-w-[11rem] dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-100";
-
-  const igBtnClass =
-    "inline-flex w-full min-h-[44px] items-center justify-center rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-violet-400 hover:bg-violet-50/60 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-violet-600 dark:hover:bg-violet-950/25 sm:min-h-[40px] sm:text-sm";
 
   const nativeBtnClass =
     variant === "modal"
@@ -392,6 +422,16 @@ export function HistoriaShareOptions({
           ))}
           <button
             type="button"
+            onClick={() => void onInstagram()}
+            disabled={igBusy}
+            aria-label="Compartir en Instagram"
+            title="Compartir en Instagram"
+            className={`${iconBtnBase} disabled:opacity-60`}
+          >
+            <IconInstagram className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
             onClick={onCopyUrl}
             aria-label="Copiar enlace"
             title="Copiar enlace"
@@ -402,22 +442,14 @@ export function HistoriaShareOptions({
         </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/40 px-3 py-3 dark:border-zinc-700/80 dark:bg-zinc-950/30">
-        <p className="mb-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
-          <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-            Instagram
-          </span>
-          : copia el texto y pégalo en la publicación, o usa la imagen vertical de
-          arriba en Stories.
-        </p>
-        <button
-          type="button"
-          onClick={onCopyInstagramCaption}
-          className={igBtnClass}
+      {igHint ? (
+        <p
+          role="status"
+          className="rounded-xl border border-zinc-200/80 bg-zinc-50/60 px-3 py-2.5 text-xs leading-snug text-zinc-700 dark:border-zinc-700/80 dark:bg-zinc-950/40 dark:text-zinc-300"
         >
-          Copiar texto para Instagram
-        </button>
-      </div>
+          {igHint}
+        </p>
+      ) : null}
     </div>
   );
 }

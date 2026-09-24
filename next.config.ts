@@ -23,9 +23,25 @@ const nextConfig: NextConfig = {
         value: "public, s-maxage=120, stale-while-revalidate=600",
       },
     ];
-    return ["/", "/angulo-muerto", "/medios", "/historia/:id"].map(
-      (source) => ({ source, headers: cdn }),
-    );
+    // Imágenes para compartir: generarlas cuesta ~3 s; una hora de caché basta.
+    const images = [
+      {
+        key: "Vercel-CDN-Cache-Control",
+        value: "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    ];
+    return [
+      ...["/", "/angulo-muerto", "/medios", "/historia/:id"].map((source) => ({
+        source,
+        headers: cdn,
+      })),
+      ...[
+        "/opengraph-image",
+        "/historia/:id/opengraph-image",
+        "/historia/:id/twitter-image",
+        "/historia/:id/story-image",
+      ].map((source) => ({ source, headers: images })),
+    ];
   },
   async redirects() {
     return [

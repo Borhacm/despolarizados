@@ -58,6 +58,24 @@ export function IconReddit({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
+export function IconInstagram({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden>
+      <defs>
+        <linearGradient id="ig-grad" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stopColor="#FEDA75" />
+          <stop offset="0.35" stopColor="#FA7E1E" />
+          <stop offset="0.6" stopColor="#D62976" />
+          <stop offset="1" stopColor="#4F5BD5" />
+        </linearGradient>
+      </defs>
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="url(#ig-grad)" strokeWidth="2.2" />
+      <circle cx="12" cy="12" r="4.3" fill="none" stroke="url(#ig-grad)" strokeWidth="2.2" />
+      <circle cx="17.4" cy="6.6" r="1.35" fill="#D62976" />
+    </svg>
+  );
+}
+
 export function IconLink({ className = "h-5 w-5" }: { className?: string }) {
   return (
     <svg

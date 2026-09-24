@@ -255,11 +255,13 @@ function findBestHistoriaEmbedding(
 ): { id: string; score: number } | null {
   let best: { id: string; score: number } | null = null;
   for (const h of pool) {
-    if (!h.embedding || !isEligible(h, medioId, pubMs)) continue;
+    // Sin fundador no hay comparación por embedding: un centroide suelto que mezcla
+    // temas se parece a cualquier noticia y absorbe todo (pasó el 24 sept 2026 con una
+    // historia creada por léxico). Esas historias solo casan por léxico.
+    if (!h.embedding || !h.seed || !isEligible(h, medioId, pubMs)) continue;
     // Debe parecerse al conjunto y al artículo fundador: sin esto, una historia larga
     // (p. ej. una crisis en directo) acababa absorbiendo piezas de temas vecinos.
-    const toCentroid = cosineSimilarity(vec, h.embedding);
-    const score = h.seed ? Math.min(toCentroid, cosineSimilarity(vec, h.seed)) : toCentroid;
+    const score = Math.min(cosineSimilarity(vec, h.embedding), cosineSimilarity(vec, h.seed));
     if (score >= threshold && (!best || score > best.score)) {
       best = { id: h.id, score };
     }
@@ -476,10 +478,19 @@ export async function runIngest(
             historiaId = match.id;
             const entry = poolById.get(historiaId)!;
             if (embedding) {
-              entry.embedding = mergeEmbeddings(entry.embedding, entry.articleCount, embedding);
+              // Historia antigua sin embeddings: este artículo pasa a ser su fundador.
+              const firstEmbedding = !entry.seed;
+              entry.embedding = firstEmbedding
+                ? embedding
+                : mergeEmbeddings(entry.embedding, entry.articleCount, embedding);
+              if (firstEmbedding) entry.seed = embedding;
               const { error: upErr } = await supabase
                 .from("historias")
-                .update({ embedding: entry.embedding })
+                .update(
+                  firstEmbedding
+                    ? { embedding: entry.embedding, seed_embedding: embedding }
+                    : { embedding: entry.embedding },
+                )
                 .eq("id", historiaId);
               if (upErr) throw upErr;
             }

@@ -366,7 +366,7 @@ export default async function Home({ searchParams }: PageProps) {
           </div>
 
           {rows.length === 0 ? (
-            stats.historias === 0 ? (
+            stats.historiasTotal === 0 ? (
               <HistoriasEmptyState variant="no-catalog" />
             ) : (
               <HistoriasEmptyState variant="no-match" />
