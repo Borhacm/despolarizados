@@ -124,12 +124,44 @@ function isTvSeriesAdvanceLowValue(title: string, summary: string): boolean {
 }
 
 /**
+ * Piezas de plantilla que cada medio repite a diario con el mismo titular (efemérides,
+ * necrológicas, resúmenes del día, horóscopo, previsión del tiempo). Solo miramos el
+ * titular: el agrupado léxico las fundía en una única «historia» de un solo medio.
+ */
+const RE_TEMPLATED_FORMAT = new RegExp(
+  [
+    /\befemerides\b/,
+    /\bnecrolog\w*/,
+    /\besquelas?\b/,
+    /\bhoroscop\w*/,
+    /\bque paso (el|un dia como hoy)\b/,
+    /\bnoticias (de hoy|del dia)\b/,
+    /\b(resumen|claves) (de las noticias )?del dia\b/,
+    /^(el )?tiempo (en|para|de) /,
+    /\bprevision del tiempo\b/,
+    /\bsanto(ral)? de hoy\b/,
+    /\bprecio de la luz (de )?(hoy|manana)\b/,
+  ]
+    .map((r) => r.source)
+    .join("|"),
+);
+
+export function isTemplatedFormat(title: string): boolean {
+  const text = normalizeForMatch(title);
+  if (!text) return false;
+  return RE_TEMPLATED_FORMAT.test(text);
+}
+
+/**
  * Misma regla que `runIngest`: descarta cuerpos de poca cita o resultados tontos.
  */
 export function shouldExcludeLowValueNews(title: string, summary: string): boolean {
   const text = normalizeForMatch(`${title} ${summary}`);
   if (!text) return false;
   return (
-    isLotteryLowValue(text) || isClubProSportsLowValue(text) || isTvSeriesAdvanceLowValue(title, summary)
+    isTemplatedFormat(title) ||
+    isLotteryLowValue(text) ||
+    isClubProSportsLowValue(text) ||
+    isTvSeriesAdvanceLowValue(title, summary)
   );
 }

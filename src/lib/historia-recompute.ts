@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { factualidadRank } from "@/lib/factualidad";
+import { sesgoLabelShort } from "@/lib/sesgo";
 
 /**
  * Recalcula titular/resumen canónico (mejor factualidad), fechas, contadores e
@@ -26,7 +27,7 @@ export async function recomputeHistoria(
     medioIds.length > 0
       ? await supabase
           .from("medios")
-          .select("id, factualidad, nombre")
+          .select("id, factualidad, nombre, sesgo")
           .in("id", medioIds)
       : { data: [], error: null };
 
@@ -57,7 +58,12 @@ export async function recomputeHistoria(
     dates[dates.length - 1] ?? (rows.length > 0 ? fallbackNow : null);
   const article_count = rows.length;
   const medio_count = new Set(medioIds).size;
-  const importancia = article_count * 10 + medio_count * 12;
+  // Importancia por pluralidad: cuentan los medios distintos y los lados del espectro
+  // que cubren la historia, no cuántas piezas publica un mismo medio.
+  const lados = new Set(
+    (mediosRows ?? []).map((m) => sesgoLabelShort((m.sesgo as string) ?? "")),
+  ).size;
+  const importancia = medio_count * 10 + (medio_count >= 2 ? lados * 8 : 0);
 
   await supabase
     .from("historias")

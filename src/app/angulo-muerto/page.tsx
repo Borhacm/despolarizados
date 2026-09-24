@@ -53,9 +53,10 @@ export default async function AnguloMuertoPage() {
               Ángulo muerto
             </h1>
             <p className="mt-3 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
-              Temas donde la mayor parte de los medios que informan se concentran
-              en un solo lado del espectro (izquierda, centro o derecha). Es
-              orientativo, no una verificación independiente.
+              Historias de los últimos 7 días que un lado del espectro ha cubierto
+              y el otro apenas: cuatro medios o más, y el lado ausente con un 10 %
+              o menos de la cobertura. Es orientativo, no una verificación
+              independiente.
             </p>
             <p className="mt-4 text-sm text-zinc-500">
               <Link
@@ -87,8 +88,7 @@ export default async function AnguloMuertoPage() {
 
         {rows.length === 0 ? (
           <p className="relative z-10 rounded-2xl border border-zinc-200 bg-zinc-50/80 px-6 py-12 text-center text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
-            Aún no hay historias con varios medios y cobertura muy sesgada. Ejecuta
-            la ingesta cuando tengas datos.
+            Esta semana no hay historias que un lado cubra y el otro ignore.
           </p>
         ) : (
           <ul className="relative z-10 space-y-5">
@@ -101,12 +101,8 @@ export default async function AnguloMuertoPage() {
                   layout="split"
                   shareUrl={`${base}/historia/${h.id}`}
                   blindspotHint={{
-                    label: h.skewLabel,
-                    pct: Math.max(
-                      h.coverageMix.izqPct,
-                      h.coverageMix.centroPct,
-                      h.coverageMix.derPct,
-                    ),
+                    missingSide: h.missingSide,
+                    pct: h.missingPct,
                   }}
                 />
               </li>

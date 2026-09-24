@@ -72,8 +72,8 @@ export async function fetchHistoriaShareFields(
     (mediosRows ?? []).map((m) => [m.id as string, m.sesgo as string]),
   );
   const sesgos: string[] = [];
-  for (const a of arts) {
-    const s = sesgoByMedio.get(a.medio_id);
+  for (const mid of new Set(arts.map((a) => a.medio_id))) {
+    const s = sesgoByMedio.get(mid);
     if (s) sesgos.push(s);
   }
   const mix = coverageMixFromSesgos(sesgos);

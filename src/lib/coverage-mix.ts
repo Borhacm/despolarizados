@@ -54,7 +54,7 @@ function countsToPercentages(
   };
 }
 
-/** Cuenta una entrada por noticia: `sesgos` puede repetir el mismo medio varias veces. */
+/** Cuenta una entrada por elemento de `sesgos`; los llamadores pasan un sesgo por medio único. */
 export function coverageMixFromSesgos(sesgos: string[]): CoverageMix | null {
   let izq = 0;
   let centro = 0;
@@ -72,8 +72,8 @@ export function coverageMixFromSesgos(sesgos: string[]): CoverageMix | null {
 }
 
 /**
- * Cobertura por sesgo (izq/centro/der) por historia: 100% = total de noticias
- * con medio clasificable; cada noticia cuenta según el sesgo de su medio.
+ * Cobertura por sesgo (izq/centro/der) por historia: 100% = medios distintos que la
+ * cubren. Cada medio cuenta una vez aunque publique varias piezas de la misma historia.
  */
 export async function fetchCoverageMixByHistoriaIds(
   supabase: SupabaseClient,
@@ -118,8 +118,8 @@ export async function fetchCoverageMixByHistoriaIds(
   );
 
   for (const hid of historiaIds) {
-    const mids = byHistoria.get(hid);
-    if (!mids?.length) continue;
+    const mids = [...new Set(byHistoria.get(hid) ?? [])];
+    if (!mids.length) continue;
     const sesgos: string[] = [];
     for (const mid of mids) {
       const s = sesgoByMedio.get(mid);

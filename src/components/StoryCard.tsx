@@ -16,14 +16,6 @@ function formatWhen(iso: string | null): string {
   }
 }
 
-function skewLabelEs(
-  label: "izquierda" | "centro" | "derecha",
-): string {
-  if (label === "izquierda") return "izquierda";
-  if (label === "derecha") return "derecha";
-  return "centro";
-}
-
 /** Misma huella que una foto para alinear filas del listado. */
 function MediaPlaceholder() {
   return (
@@ -61,7 +53,7 @@ export function StoryCard({
   coverageMix?: CoverageMix | null;
   layout?: "stack" | "split";
   blindspotHint?: {
-    label: "izquierda" | "centro" | "derecha";
+    missingSide: "izquierda" | "derecha";
     pct: number;
   };
   /** Primera historia en portada (bloque grande tipo “Top news”). */
@@ -171,8 +163,7 @@ export function StoryCard({
     <>
       {blindspotHint ? (
         <p className="min-h-[1.25rem] text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-          Cobertura dominante: {skewLabelEs(blindspotHint.label)} (~
-          {blindspotHint.pct}%)
+          Apenas cubierta por la {blindspotHint.missingSide} ({blindspotHint.pct} %)
         </p>
       ) : null}
       {isFeatured ? (

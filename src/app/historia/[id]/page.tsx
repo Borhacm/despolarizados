@@ -148,12 +148,12 @@ export default async function HistoriaPage(props: PageProps) {
       ? positions.reduce((a, b) => a + b, 0) / positions.length
       : 50;
 
-  const sesgosPorNoticia: string[] = [];
-  for (const a of arts) {
-    const m = medioMap.get(a.medio_id);
-    if (m?.sesgo) sesgosPorNoticia.push(m.sesgo);
+  const sesgosPorMedio: string[] = [];
+  for (const mid of covered) {
+    const m = medioMap.get(mid);
+    if (m?.sesgo) sesgosPorMedio.push(m.sesgo);
   }
-  const coverageMix = coverageMixFromSesgos(sesgosPorNoticia);
+  const coverageMix = coverageMixFromSesgos(sesgosPorMedio);
 
   const dated = arts
     .filter((a) => a.imagen_url)

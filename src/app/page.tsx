@@ -4,7 +4,7 @@ import { StoryCard } from "@/components/StoryCard";
 import { StoryFilters } from "@/components/StoryFilters";
 import { fetchCatalogStats, type CatalogStats } from "@/lib/db-stats";
 import { HISTORIAS_PAGE_SIZE } from "@/lib/historias-page-size";
-import { fetchCoverageMixByHistoriaIds } from "@/lib/coverage-mix";
+import { fetchCoverageMixByHistoriaIds, type CoverageMix } from "@/lib/coverage-mix";
 import { fetchCoverImagesByHistoriaIds } from "@/lib/historia-covers";
 import { buildHistoriasSelect } from "@/lib/historias-query-build";
 import {
@@ -35,6 +35,18 @@ const MAX_IN = 1000;
 const HYBRID_CANDIDATE_LIMIT = 600;
 
 type HomeOrderMode = "ultimas" | "relevantes";
+
+const TRENDING_WINDOW_MS = 48 * 3600000;
+const FEATURED_MIN_MEDIOS = 3;
+const FEATURED_MAX_AGE_MS = 36 * 3600000;
+
+function isPluralStory(h: HistoriaRow, mix: CoverageMix | undefined): boolean {
+  if ((h.medio_count ?? 0) < FEATURED_MIN_MEDIOS || !mix) return false;
+  const lados = [mix.izq, mix.centro, mix.der].filter((n) => n > 0).length;
+  if (lados < 2) return false;
+  const pub = h.ultima_pub ? new Date(h.ultima_pub).getTime() : 0;
+  return Date.now() - pub <= FEATURED_MAX_AGE_MS;
+}
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -269,6 +281,8 @@ export default async function Home({ searchParams }: PageProps) {
     supabaseClient
       .from("historias")
       .select("titulo_canonico")
+      .gte("ultima_pub", new Date(Date.now() - TRENDING_WINDOW_MS).toISOString())
+      .gte("medio_count", 2)
       .order("importancia", { ascending: false })
       .limit(120),
     fetchCoverImagesByHistoriaIds(supabaseClient, ids),
@@ -295,10 +309,11 @@ export default async function Home({ searchParams }: PageProps) {
     !orientacion &&
     rows.length > 0;
 
-  const [featured, rest] =
-    showFeaturedBlock && rows.length > 0
-      ? [rows[0], rows.slice(1)]
-      : [null, rows];
+  // Destacada solo si es plural: varios medios de al menos dos lados y reciente.
+  const featured = showFeaturedBlock
+    ? (rows.find((r) => isPluralStory(r, coverageMixes.get(r.id))) ?? null)
+    : null;
+  const rest = featured ? rows.filter((r) => r.id !== featured.id) : rows;
 
   return (
     <main className="mx-auto max-w-6xl flex-1 overflow-x-clip px-4 py-10 sm:px-6">
