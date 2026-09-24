@@ -40,6 +40,10 @@ const TRENDING_WINDOW_MS = 48 * 3600000;
 const FEATURED_MIN_MEDIOS = 3;
 const FEATURED_MAX_AGE_MS = 36 * 3600000;
 
+function isoHoursAgo(ms: number): string {
+  return new Date(Date.now() - ms).toISOString();
+}
+
 function isPluralStory(h: HistoriaRow, mix: CoverageMix | undefined): boolean {
   if ((h.medio_count ?? 0) < FEATURED_MIN_MEDIOS || !mix) return false;
   const lados = [mix.izq, mix.centro, mix.der].filter((n) => n > 0).length;
@@ -212,16 +216,12 @@ export default async function Home({ searchParams }: PageProps) {
     searchTerm: q,
   };
 
-  let listQuery = buildHistoriasSelect(supabaseClient, {
-    ...filterBase,
-    searchMode: "fts",
-  });
   let historias: HistoriaRow[] = [];
   let error: { message: string } | null = null;
   let hasMore = false;
 
   async function runQuery(searchMode: "fts" | "ilike") {
-    listQuery = buildHistoriasSelect(supabaseClient, {
+    const listQuery = buildHistoriasSelect(supabaseClient, {
       ...filterBase,
       searchMode,
     });
@@ -281,7 +281,7 @@ export default async function Home({ searchParams }: PageProps) {
     supabaseClient
       .from("historias")
       .select("titulo_canonico")
-      .gte("ultima_pub", new Date(Date.now() - TRENDING_WINDOW_MS).toISOString())
+      .gte("ultima_pub", isoHoursAgo(TRENDING_WINDOW_MS))
       .gte("medio_count", 2)
       .order("importancia", { ascending: false })
       .limit(120),
