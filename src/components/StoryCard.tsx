@@ -3,6 +3,7 @@ import { StoryCardShareButton } from "@/components/StoryCardShareButton";
 import type { CoverageMix } from "@/lib/coverage-mix";
 import type { HistoriaRow } from "@/lib/types";
 import Link from "next/link";
+import { snippet } from "@/lib/snippet";
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "";
@@ -173,7 +174,7 @@ export function StoryCard({
       ) : null}
       <h2 className={titleClass}>{h.titulo_canonico}</h2>
       <p className={summaryClass}>
-        {h.resumen_canonico?.trim() ? h.resumen_canonico : "\u00A0"}
+        {h.resumen_canonico?.trim() ? snippet(h.resumen_canonico) : "\u00A0"}
       </p>
       <div
         className={

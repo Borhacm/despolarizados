@@ -9,6 +9,8 @@ import { useCallback, useState } from "react";
  */
 export function FeedEmailSignup() {
   const [email, setEmail] = useState("");
+  /** Campo trampa: las personas no lo ven; si llega relleno, el servidor lo descarta. */
+  const [website, setWebsite] = useState("");
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "err">(
     "idle",
@@ -24,7 +26,7 @@ export function FeedEmailSignup() {
         const res = await fetch("/api/newsletter/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim(), frequency }),
+          body: JSON.stringify({ email: email.trim(), frequency, website }),
         });
         const data = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
@@ -46,7 +48,7 @@ export function FeedEmailSignup() {
         setMessage("Error de red. Inténtalo de nuevo.");
       }
     },
-    [email, frequency],
+    [email, frequency, website],
   );
 
   return (
@@ -87,6 +89,16 @@ export function FeedEmailSignup() {
               >
                 Correo electrónico
               </label>
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+              />
               <input
                 id="feed-signup-email"
                 type="email"

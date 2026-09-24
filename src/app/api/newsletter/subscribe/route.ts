@@ -12,15 +12,51 @@ import { z } from "zod";
 export const runtime = "nodejs";
 
 const bodySchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().max(254),
   frequency: z.enum(["daily", "weekly"]),
+  /** Campo trampa: invisible para personas; si viene relleno, es un robot. */
+  website: z.string().optional(),
 });
+
+const RESEND_COOLDOWN_MS = 15 * 60 * 1000;
+const IP_WINDOW_MS = 60 * 60 * 1000;
+const IP_MAX_SENDS = 5;
+/** Límite por IP en memoria (por instancia): frena abusos simples sin infraestructura extra. */
+const sendsByIp = new Map<string, number[]>();
+
+function ipAllowed(ip: string): boolean {
+  const now = Date.now();
+  const recent = (sendsByIp.get(ip) ?? []).filter((t) => now - t < IP_WINDOW_MS);
+  if (recent.length >= IP_MAX_SENDS) {
+    sendsByIp.set(ip, recent);
+    return false;
+  }
+  recent.push(now);
+  sendsByIp.set(ip, recent);
+  return true;
+}
+
+function sameOrigin(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+  try {
+    const host = new URL(origin).host;
+    return host === request.headers.get("host") || host === new URL(getAppBaseUrl()).host;
+  } catch {
+    return false;
+  }
+}
+
+const CHECK_INBOX_MESSAGE = "Te hemos enviado un correo. Ábrelo y pulsa el enlace para confirmar.";
 
 function frequencyLabel(f: "daily" | "weekly"): string {
   return f === "daily" ? "resumen diario" : "resumen semanal";
 }
 
 export async function POST(request: Request) {
+  if (!sameOrigin(request)) {
+    return NextResponse.json({ error: "Origen no permitido" }, { status: 403 });
+  }
   let json: unknown;
   try {
     json = await request.json();
@@ -34,6 +70,10 @@ export async function POST(request: Request) {
       { error: "Correo o frecuencia no válidos" },
       { status: 400 },
     );
+  }
+
+  if (parsed.data.website?.trim()) {
+    return NextResponse.json({ ok: true, message: CHECK_INBOX_MESSAGE });
   }
 
   const email = parsed.data.email.trim();
@@ -57,11 +97,26 @@ export async function POST(request: Request) {
 
     const { data: existing, error: findErr } = await supabase
       .from("newsletter_subscribers")
-      .select("id, verified_at")
+      .select("*")
       .eq("email_lower", emailLower)
       .maybeSingle();
 
     if (findErr) throw findErr;
+
+    // Ya se envió hace poco: no reenviamos (la columna existe tras la migración 20260925090000).
+    const lastSent = (existing as { verification_sent_at?: string | null } | null)
+      ?.verification_sent_at;
+    if (!existing?.verified_at && lastSent && Date.now() - new Date(lastSent).getTime() < RESEND_COOLDOWN_MS) {
+      return NextResponse.json({ ok: true, message: CHECK_INBOX_MESSAGE });
+    }
+
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "desconocida";
+    if (!existing?.verified_at && !ipAllowed(ip)) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Prueba de nuevo dentro de un rato." },
+        { status: 429 },
+      );
+    }
 
     if (existing?.verified_at) {
       return NextResponse.json({
@@ -106,19 +161,22 @@ export async function POST(request: Request) {
     });
 
     if (!sent.ok) {
+      console.error("newsletter subscribe: envío fallido", sent.error);
       return NextResponse.json(
-        { error: sent.error || "No se pudo enviar el correo de verificación." },
+        { error: "No se pudo enviar el correo de verificación." },
         { status: 502 },
       );
     }
 
-    return NextResponse.json({
-      ok: true,
-      message:
-        "Te hemos enviado un correo. Ábrelo y pulsa el enlace para confirmar.",
-    });
+    // Sin la migración la columna no existe: Supabase devuelve un error que ignoramos.
+    await supabase
+      .from("newsletter_subscribers")
+      .update({ verification_sent_at: new Date().toISOString() })
+      .eq("email_lower", emailLower);
+
+    return NextResponse.json({ ok: true, message: CHECK_INBOX_MESSAGE });
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("newsletter subscribe", e);
+    return NextResponse.json({ error: "No se pudo completar la suscripción." }, { status: 500 });
   }
 }

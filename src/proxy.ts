@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|icon$|apple-icon$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  // Solo las rutas que usan la sesión de Supabase. El resto de páginas no lee cookies y
+  // puede servirse desde la CDN.
+  matcher: ["/feed/:path*", "/login/:path*", "/auth/:path*", "/api/feed/:path*", "/medios/:slug"],
 };

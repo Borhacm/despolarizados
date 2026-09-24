@@ -12,6 +12,21 @@ const nextConfig: NextConfig = {
    * El alias despolarizados.vercel.app servía la web entera y competía en Google con el
    * dominio propio. `/api/` queda fuera para no romper crons ni webhooks.
    */
+  /**
+   * Caché en la CDN de Vercel para páginas públicas (Next reescribe Cache-Control en
+   * páginas dinámicas, pero no esta cabecera). Ninguna de estas rutas lee la sesión.
+   */
+  async headers() {
+    const cdn = [
+      {
+        key: "Vercel-CDN-Cache-Control",
+        value: "public, s-maxage=120, stale-while-revalidate=600",
+      },
+    ];
+    return ["/", "/angulo-muerto", "/medios", "/historia/:id"].map(
+      (source) => ({ source, headers: cdn }),
+    );
+  },
   async redirects() {
     return [
       {

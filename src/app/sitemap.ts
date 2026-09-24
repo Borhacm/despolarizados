@@ -11,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/`, changeFrequency: "hourly", priority: 1 },
     { url: `${base}/angulo-muerto`, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/medios`, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${base}/metodologia`, changeFrequency: "monthly", priority: 0.5 },
   ];
   const supabase = createPublicClient();
   if (!supabase) return fixed;

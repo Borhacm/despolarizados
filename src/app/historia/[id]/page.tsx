@@ -16,6 +16,7 @@ import { sesgoToPosition } from "@/lib/sesgo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { snippet } from "@/lib/snippet";
 
 export const dynamic = "force-dynamic";
 
@@ -187,7 +188,7 @@ export default async function HistoriaPage(props: PageProps) {
           </h1>
           {historia.resumen_canonico ? (
             <p className="text-pretty text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400">
-              {historia.resumen_canonico}
+              {snippet(historia.resumen_canonico, 300)}
             </p>
           ) : null}
           <div className="pt-0.5">

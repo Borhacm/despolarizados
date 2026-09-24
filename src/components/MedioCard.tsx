@@ -66,9 +66,11 @@ export function MedioCard({ m }: { m: Medio }) {
           <span className="inline-flex items-center rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
             Sesgo: {m.sesgo}
           </span>
-          <span className="inline-flex items-center rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
-            Factualidad: {m.factualidad}
-          </span>
+          {m.ownership ? (
+            <span className="inline-flex items-center rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
+              Grupo: {m.ownership}
+            </span>
+          ) : null}
         </div>
 
         <div className="mt-auto mb-4">

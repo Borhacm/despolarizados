@@ -2,11 +2,12 @@ import Parser from "rss-parser";
 import type { Item } from "rss-parser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { recomputeHistoria } from "@/lib/historia-recompute";
-import { embedOne } from "@/lib/embeddings";
+import { embedTexts } from "@/lib/embeddings";
 import { getIngestClusterMode } from "@/lib/ingest-mode";
 import { shouldExcludeLowValueNews } from "@/lib/ingest-relevance";
 import { lexicalClusteringScore, parseLexicalThreshold } from "@/lib/title-similarity";
 import { cosineSimilarity, mergeEmbeddings, parseVector } from "@/lib/vector";
+import { snippet, SNIPPET_STORE_CHARS } from "@/lib/snippet";
 
 /** Umbral coseno embedding vs. historia; por defecto igual que antes (0.82). */
 function embeddingMatchThreshold(): number {
@@ -302,11 +303,8 @@ async function fetchFeedsConcurrently<T extends { feedUrl: string }>(
 }
 
 function summaryFromItem(item: Item): string {
-  return (item.contentSnippet ?? item.summary ?? item.content ?? "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 1200);
+  const text = (item.contentSnippet ?? item.summary ?? item.content ?? "").replace(/<[^>]+>/g, " ");
+  return snippet(text, SNIPPET_STORE_CHARS);
 }
 
 function imageFromItem(item: Item): string | null {
@@ -352,6 +350,7 @@ export async function runIngest(
   const scheduledFeeds = pickShardFeeds(allFeeds, shard.total, shard.index);
   feedsScheduled = scheduledFeeds.length;
 
+  let embeddingsDisabled = false;
   const pool = await loadHistoriasPool(supabase, clusterMode === "openai");
   const poolById = new Map(pool.map((p) => [p.id, p]));
   const fetched = await fetchFeedsConcurrently(scheduledFeeds, deadlineMs);
@@ -380,11 +379,18 @@ export async function runIngest(
         for (const r of existing ?? []) known.add(r.url as string);
       }
 
+      // 1) Filtrar: nuevos, con titular y que no sean ruido.
+      type Candidate = {
+        url: string;
+        title: string;
+        summary: string;
+        imagen: string | null;
+        fecha_pub: string | null;
+        pubMs: number;
+        embedding: number[] | null;
+      };
+      const candidates: Candidate[] = [];
       for (const item of items) {
-        if (Date.now() >= deadlineMs - INGEST_TIME_SAFETY_MARGIN_MS) {
-          timedOutEarly = true;
-          break feedLoop;
-        }
         itemsSeen += 1;
         const url = item.link?.trim();
         const title = (item.title ?? "").trim();
@@ -394,90 +400,118 @@ export async function runIngest(
           continue;
         }
         known.add(url);
-
         const summary = summaryFromItem(item);
         if (shouldExcludeLowValueNews(title, summary)) {
           itemsExcludedLowValue += 1;
           continue;
         }
-
-        const imagen = imageFromItem(item);
         const fechaRaw = item.isoDate ?? item.pubDate;
         const parsedFecha = fechaRaw ? new Date(fechaRaw) : null;
         const fecha_pub =
           parsedFecha && !Number.isNaN(parsedFecha.getTime()) ? parsedFecha.toISOString() : null;
-        const now = new Date().toISOString();
-        const pubMs = new Date(fecha_pub ?? now).getTime();
-
-        const embedding =
-          clusterMode === "openai" ? await embedOne(pickTextForEmbedding(title, summary)) : null;
-        let match = embedding ? findBestHistoriaOpenAI(pool, embedding, medio.id, pubMs) : null;
-        if (!match) {
-          match = findBestHistoriaLexical(pool, title, summary, lexicalThreshold, medio.id, pubMs);
-        }
-
-        let historiaId: string;
-        if (match) {
-          historiaId = match.id;
-          const entry = poolById.get(historiaId)!;
-          const update: Record<string, unknown> = { updated_at: now };
-          if (embedding) {
-            entry.embedding = mergeEmbeddings(entry.embedding, entry.articleCount, embedding);
-            update.embedding = entry.embedding;
-          }
-          const { error: upErr } = await supabase
-            .from("historias")
-            .update(update)
-            .eq("id", historiaId);
-          if (upErr) throw upErr;
-          entry.articleCount += 1;
-          entry.ultimaPubMs = Math.max(entry.ultimaPubMs, pubMs);
-          entry.porMedio.set(medio.id, (entry.porMedio.get(medio.id) ?? 0) + 1);
-        } else {
-          const { data: hNew, error: insHErr } = await supabase
-            .from("historias")
-            .insert({
-              titulo_canonico: title,
-              resumen_canonico: summary || null,
-              embedding,
-              importancia: 0,
-              primera_pub: fecha_pub ?? now,
-              ultima_pub: fecha_pub ?? now,
-              article_count: 0,
-              medio_count: 0,
-            })
-            .select("id")
-            .single();
-          if (insHErr) throw insHErr;
-          historiaId = hNew!.id as string;
-          const entry: PoolEntry = {
-            id: historiaId,
-            titulo_canonico: title,
-            resumen_canonico: summary || null,
-            embedding,
-            articleCount: 1,
-            ultimaPubMs: pubMs,
-            porMedio: new Map([[medio.id, 1]]),
-          };
-          pool.unshift(entry);
-          poolById.set(historiaId, entry);
-        }
-
-        const { error: insErr } = await supabase.from("articulos").insert({
-          historia_id: historiaId,
-          medio_id: medio.id,
-          titulo: title,
-          resumen: summary || null,
+        candidates.push({
           url,
+          title,
+          summary,
+          imagen: imageFromItem(item),
           fecha_pub,
-          imagen_url: imagen,
-          embedding,
+          pubMs: fecha_pub ? new Date(fecha_pub).getTime() : Date.now(),
+          embedding: null,
         });
-        if (insErr) throw insErr;
-
-        await recomputeHistoria(supabase, historiaId);
-        articlesInserted += 1;
       }
+
+      // 2) Embeddings en una sola llamada por feed. Si OpenAI falla (cuota, red), se
+      //    desactivan para el resto de la ejecución y se agrupa por léxico.
+      if (clusterMode === "openai" && !embeddingsDisabled && candidates.length > 0) {
+        try {
+          const embs = await embedTexts(
+            candidates.map((c) => pickTextForEmbedding(c.title, c.summary)),
+          );
+          candidates.forEach((c, i) => (c.embedding = embs[i] ?? null));
+        } catch (e) {
+          embeddingsDisabled = true;
+          errors.push(`Embeddings desactivados en esta ejecución: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+
+      // 3) Agrupar e insertar; cada historia tocada se recalcula una vez al final del feed.
+      const touched = new Set<string>();
+      try {
+        for (const c of candidates) {
+          if (Date.now() >= deadlineMs - INGEST_TIME_SAFETY_MARGIN_MS) {
+            timedOutEarly = true;
+            break;
+          }
+          const now = new Date().toISOString();
+          const { embedding } = c;
+          let match = embedding ? findBestHistoriaOpenAI(pool, embedding, medio.id, c.pubMs) : null;
+          if (!match) {
+            match = findBestHistoriaLexical(pool, c.title, c.summary, lexicalThreshold, medio.id, c.pubMs);
+          }
+
+          let historiaId: string;
+          if (match) {
+            historiaId = match.id;
+            const entry = poolById.get(historiaId)!;
+            if (embedding) {
+              entry.embedding = mergeEmbeddings(entry.embedding, entry.articleCount, embedding);
+              const { error: upErr } = await supabase
+                .from("historias")
+                .update({ embedding: entry.embedding })
+                .eq("id", historiaId);
+              if (upErr) throw upErr;
+            }
+            entry.articleCount += 1;
+            entry.ultimaPubMs = Math.max(entry.ultimaPubMs, c.pubMs);
+            entry.porMedio.set(medio.id, (entry.porMedio.get(medio.id) ?? 0) + 1);
+          } else {
+            const { data: hNew, error: insHErr } = await supabase
+              .from("historias")
+              .insert({
+                titulo_canonico: c.title,
+                resumen_canonico: c.summary || null,
+                embedding,
+                importancia: 0,
+                primera_pub: c.fecha_pub ?? now,
+                ultima_pub: c.fecha_pub ?? now,
+                article_count: 0,
+                medio_count: 0,
+              })
+              .select("id")
+              .single();
+            if (insHErr) throw insHErr;
+            historiaId = hNew!.id as string;
+            const entry: PoolEntry = {
+              id: historiaId,
+              titulo_canonico: c.title,
+              resumen_canonico: c.summary || null,
+              embedding,
+              articleCount: 1,
+              ultimaPubMs: c.pubMs,
+              porMedio: new Map([[medio.id, 1]]),
+            };
+            pool.unshift(entry);
+            poolById.set(historiaId, entry);
+          }
+
+          const { error: insErr } = await supabase.from("articulos").insert({
+            historia_id: historiaId,
+            medio_id: medio.id,
+            titulo: c.title,
+            resumen: c.summary || null,
+            url: c.url,
+            fecha_pub: c.fecha_pub,
+            imagen_url: c.imagen,
+            embedding,
+          });
+          if (insErr) throw insErr;
+          touched.add(historiaId);
+          articlesInserted += 1;
+        }
+      } finally {
+        for (const hid of touched) await recomputeHistoria(supabase, hid);
+      }
+      if (timedOutEarly) break;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       errors.push(`${medio.nombre} (${feedUrl}): ${msg}`);
