@@ -1,3 +1,4 @@
+import { secretsMatch } from "@/lib/admin-secret";
 import { medioInsertSchema } from "@/lib/medio-schema";
 import { createServiceClient } from "@/lib/supabase/service";
 import { NextResponse } from "next/server";
@@ -16,7 +17,7 @@ const apiBodySchema = medioInsertSchema.extend({
 export async function POST(request: Request) {
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!secret || !secretsMatch(auth ?? "", `Bearer ${secret}`)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 

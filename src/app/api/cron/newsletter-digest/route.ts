@@ -1,3 +1,4 @@
+import { secretsMatch } from "@/lib/admin-secret";
 import {
   isEligibleForDailyDigest,
   isEligibleForWeeklyDigest,
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
 
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!secret || !secretsMatch(auth ?? "", `Bearer ${secret}`)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 

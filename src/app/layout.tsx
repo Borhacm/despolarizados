@@ -5,6 +5,7 @@ import { ScrollSubscribeModal } from "@/components/ScrollSubscribeModal";
 import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { SiteFooter } from "@/components/SiteFooter";
 import { THEME_STORAGE_KEY } from "@/lib/theme-storage";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
@@ -22,6 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getAppBaseUrl()),
   title: {
     default: "Despolarizados",
     template: "%s · Despolarizados",

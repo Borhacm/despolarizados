@@ -1,3 +1,4 @@
+import { secretsMatch } from "@/lib/admin-secret";
 import { getAppBaseUrl } from "@/lib/app-base-url";
 import {
   buildInstagramBrief,
@@ -16,7 +17,7 @@ export const maxDuration = 300;
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!secret || !secretsMatch(auth ?? "", `Bearer ${secret}`)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 

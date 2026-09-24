@@ -29,6 +29,16 @@ export const metadata: Metadata = {
   title: { absolute: "Despolarizados" },
   description:
     "Historias desde varios medios: contexto y cobertura para leer con más perspectiva.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    siteName: "Despolarizados",
+    title: "Despolarizados: ve todos los lados de cada noticia",
+    description:
+      "La misma historia contada por medios de izquierda, centro y derecha, con su reparto de cobertura.",
+    url: "/",
+  },
 };
 
 const MAX_IN = 1000;

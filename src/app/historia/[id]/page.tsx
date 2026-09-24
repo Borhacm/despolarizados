@@ -60,6 +60,8 @@ export async function generateMetadata({
     description: desc,
     metadataBase: new URL(base),
     alternates: { canonical },
+    // Una historia de un solo medio no aporta comparación: no la indexamos.
+    robots: fields.medio_count < 2 ? { index: false, follow: true } : undefined,
     openGraph: {
       title: t,
       description: desc,

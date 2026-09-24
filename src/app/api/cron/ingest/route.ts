@@ -1,3 +1,4 @@
+import { secretsMatch } from "@/lib/admin-secret";
 import { ingestRequiresOpenAI } from "@/lib/ingest-mode";
 import { runIngest } from "@/lib/ingest";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -9,7 +10,7 @@ export const maxDuration = 300;
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!secret || !secretsMatch(auth ?? "", `Bearer ${secret}`)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
