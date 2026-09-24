@@ -26,7 +26,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Inicio",
+  title: { absolute: "Despolarizados" },
   description:
     "Historias desde varios medios: contexto y cobertura para leer con más perspectiva.",
 };
@@ -315,17 +315,6 @@ export default async function Home({ searchParams }: PageProps) {
           />
         </div>
         <div className="relative z-10">
-          <div className="mb-4">
-            <HomeOrderTabs
-              orden={orden}
-              query={{
-                q: qRaw.trim() ? qRaw : undefined,
-                medio: medioSlug || undefined,
-                ventana: ventana !== "all" ? ventana : undefined,
-                orientacion: orientacion || undefined,
-              }}
-            />
-          </div>
           <div className="mb-8">
             <StoryFilters
               q={qRaw}
@@ -337,6 +326,17 @@ export default async function Home({ searchParams }: PageProps) {
               subtitle="Busca en titulares y resúmenes; filtra por medio, fechas o cobertura editorial."
               collapsible
               defaultOpen={filtersActive}
+            />
+          </div>
+          <div className="mb-4">
+            <HomeOrderTabs
+              orden={orden}
+              query={{
+                q: qRaw.trim() ? qRaw : undefined,
+                medio: medioSlug || undefined,
+                ventana: ventana !== "all" ? ventana : undefined,
+                orientacion: orientacion || undefined,
+              }}
             />
           </div>
 

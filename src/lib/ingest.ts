@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { recomputeHistoria } from "@/lib/historia-recompute";
 import { embedOne } from "@/lib/embeddings";
 import { getIngestClusterMode } from "@/lib/ingest-mode";
+import { shouldExcludeLowValueNews } from "@/lib/ingest-relevance";
 import { lexicalClusteringScore, parseLexicalThreshold } from "@/lib/title-similarity";
 import { cosineSimilarity, mergeEmbeddings, parseVector } from "@/lib/vector";
 
@@ -98,6 +99,7 @@ export type IngestResult = {
   feedsScheduled: number;
   feedsProcessed: number;
   itemsSeen: number;
+  itemsExcludedLowValue: number;
   articlesInserted: number;
   skippedDuplicate: number;
   clusterMode: "openai" | "lexical";
@@ -261,6 +263,7 @@ export async function runIngest(
   let feedsScheduled = 0;
   let feedsProcessed = 0;
   let itemsSeen = 0;
+  let itemsExcludedLowValue = 0;
   let articlesInserted = 0;
   let skippedDuplicate = 0;
 
@@ -324,6 +327,11 @@ export async function runIngest(
             .replace(/\s+/g, " ")
             .trim()
             .slice(0, 1200);
+
+          if (shouldExcludeLowValueNews(title, summary)) {
+            itemsExcludedLowValue += 1;
+            continue;
+          }
 
           let imagen: string | null = null;
           const it = item as Record<string, unknown>;
@@ -505,6 +513,7 @@ export async function runIngest(
     feedsScheduled,
     feedsProcessed,
     itemsSeen,
+    itemsExcludedLowValue,
     articlesInserted,
     skippedDuplicate,
     clusterMode,

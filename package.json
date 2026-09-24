@@ -11,7 +11,8 @@
     "db:count": "node --import tsx scripts/db-count.ts",
     "backfill:dates": "node --import tsx scripts/backfill-ultima-pub.ts",
     "seed:medios": "node --import tsx scripts/seed-medios.ts",
-    "dedupe-historias": "node --import tsx scripts/dedupe-historias.ts"
+    "dedupe-historias": "node --import tsx scripts/dedupe-historias.ts",
+    "reingest:prune": "node --import tsx scripts/reingest-and-prune.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
@@ -21,6 +22,7 @@
     "openai": "^6.34.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "resend": "^6.12.0",
     "rss-parser": "^3.13.0",
     "zod": "^4.3.6"
   },

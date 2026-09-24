@@ -28,6 +28,11 @@ type SubscriberRow = {
 };
 
 export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const forceSend =
+    url.searchParams.get("force") === "1" ||
+    url.searchParams.get("force") === "true";
+
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
   if (!secret || auth !== `Bearer ${secret}`) {
@@ -65,7 +70,7 @@ export async function GET(request: Request) {
           ? isEligibleForDailyDigest(sub.last_digest_sent_at)
           : isEligibleForWeeklyDigest(sub.last_digest_sent_at);
 
-      if (!eligible) {
+      if (!forceSend && !eligible) {
         skipped += 1;
         continue;
       }
@@ -83,6 +88,20 @@ export async function GET(request: Request) {
           `${sub.email}: ${e instanceof Error ? e.message : String(e)}`,
         );
         continue;
+      }
+
+      if (forceSend && items.length === 0) {
+        const sevenDaysAgo = new Date(
+          Date.now() - 7 * 24 * 60 * 60 * 1000,
+        ).toISOString();
+        try {
+          items = await fetchHistoriasCargadasDesde(supabase, sevenDaysAgo);
+        } catch (e) {
+          errors.push(
+            `${sub.email}: ${e instanceof Error ? e.message : String(e)}`,
+          );
+          continue;
+        }
       }
 
       if (items.length === 0) {
@@ -103,7 +122,7 @@ export async function GET(request: Request) {
         to: sub.email,
         subject:
           sub.frequency === "daily"
-            ? "Despolarizados — resumen del día"
+            ? "Despolarizados — resumen del día para la pausa del café"
             : "Despolarizados — resumen semanal",
         html: digestEmailHtml({
           title,
@@ -111,6 +130,8 @@ export async function GET(request: Request) {
             url: i.url,
             titulo: i.titulo,
             resumen: i.resumen,
+            imageUrl: i.imageUrl,
+            coverageMix: i.coverageMix,
           })),
           unsubscribeUrl: unsubUrl,
         }),

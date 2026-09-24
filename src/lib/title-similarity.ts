@@ -171,6 +171,105 @@ export function combinedArticleText(title: string, summary: string): string {
   return `${title}\n${sum}`;
 }
 
+/** Sustantivos/roles genéricos: no sirven solos para deduplicar «mismo día, mismo ancla». */
+const DEDUPE_ANCHOR_GENERIC = new Set(
+  [
+    "gobierno",
+    "gobiernos",
+    "presidente",
+    "presidenta",
+    "ministro",
+    "ministra",
+    "ministros",
+    "comunidad",
+    "comunidades",
+    "nacional",
+    "nacionales",
+    "regional",
+    "regionales",
+    "municipal",
+    "municipales",
+    "español",
+    "española",
+    "españoles",
+    "congreso",
+    "senado",
+    "parlamento",
+    "asamblea",
+    "pleno",
+    "diputado",
+    "diputada",
+    "alcalde",
+    "alcaldesa",
+    "venezuela",
+    "colombia",
+    "argentina",
+    "ucrania",
+    "pakistan",
+    "israel",
+    "palestina",
+    "españa",
+    "espana",
+  ].map((s) => normalizeToken(s)),
+);
+
+function dedupeAnchorTokenize(s: string): string[] {
+  const n = normalizeForMatch(s);
+  return n
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(
+      (t) =>
+        t.length >= 6 && !STOP.has(t) && !DEDUPE_ANCHOR_GENERIC.has(t),
+    );
+}
+
+/**
+ * Mismo hecho, titulares poco solapados (misma figura, mismo día). Solo para
+ * el script de deduplicación post-carga, no aplica a la ingesta.
+ */
+/**
+ * Misma regla de ancla pero solo nombres/entidades en **titulares** (el resumen
+ * puede mezclar nombres del mismo ecosistema regional pese a hechos distintos).
+ */
+export function hasHistoriasSharedTitleOnlyDedupeAnchor(
+  aTitle: string,
+  bTitle: string,
+): boolean {
+  return hasHistoriasSharedDedupeAnchor(aTitle, "", bTitle, "");
+}
+
+export function hasHistoriasSharedDedupeAnchor(
+  aTitle: string,
+  aResumen: string | null,
+  bTitle: string,
+  bResumen: string | null,
+): boolean {
+  const ca = combinedArticleText(aTitle, aResumen ?? "");
+  const cb = combinedArticleText(bTitle, bResumen ?? "");
+  const ta = new Set(dedupeAnchorTokenize(ca));
+  const tb = new Set(dedupeAnchorTokenize(cb));
+  const inter = [...ta].filter((t) => tb.has(t));
+  if (inter.length === 0) return false;
+  if (inter.length >= 2) {
+    if (inter.every((t) => t.length >= 6)) return true;
+  }
+  if (inter.length === 1 && (inter[0]!.length ?? 0) >= 8) return true;
+  return false;
+}
+
+/**
+ * Misma fecha de publicación (vía `ultima_pub` en ISO) para reforzar pares
+ * de deduplicación; compara YYYY-MM-DD.
+ */
+export function samePublicacionDate(
+  aUltima: string | null,
+  bUltima: string | null,
+): boolean {
+  if (!aUltima || !bUltima) return false;
+  return aUltima.slice(0, 10) === bUltima.slice(0, 10);
+}
+
 const TOKEN_W = 0.55;
 const BIGRAM_W = 0.45;
 

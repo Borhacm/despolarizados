@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchCoverageMixByHistoriaIds, type CoverageMix } from "@/lib/coverage-mix";
+import { fetchCoverImagesByHistoriaIds } from "@/lib/historia-covers";
 import { buildHistoriaUrl } from "@/lib/newsletter-resend";
 
 const MAX_STORIES = 25;
@@ -8,6 +10,8 @@ export type DigestItem = {
   titulo: string;
   resumen: string | null;
   url: string;
+  imageUrl: string | null;
+  coverageMix: CoverageMix | null;
 };
 
 /** Historias cuyo registro se creó en el sistema después de `sinceIso` (ingesta/carga). */
@@ -24,11 +28,28 @@ export async function fetchHistoriasCargadasDesde(
 
   if (error) throw error;
 
-  return (data ?? []).map((row) => ({
+  const rows = (data ?? []) as {
+    id: string;
+    titulo_canonico: string;
+    resumen_canonico: string | null;
+  }[];
+
+  const coverageByHistoria = await fetchCoverageMixByHistoriaIds(
+    supabase,
+    rows.map((row) => row.id),
+  );
+  const imageByHistoria = await fetchCoverImagesByHistoriaIds(
+    supabase,
+    rows.map((row) => row.id),
+  );
+
+  return rows.map((row) => ({
     id: row.id as string,
     titulo: row.titulo_canonico as string,
     resumen: (row.resumen_canonico as string | null) ?? null,
     url: buildHistoriaUrl(row.id as string),
+    imageUrl: imageByHistoria.get(row.id) ?? null,
+    coverageMix: coverageByHistoria.get(row.id) ?? null,
   }));
 }
 

@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
  */
 export function FeedEmailSignup() {
   const [email, setEmail] = useState("");
-  const [frequency, setFrequency] = useState<"daily" | "weekly">("weekly");
+  const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "err">(
     "idle",
   );

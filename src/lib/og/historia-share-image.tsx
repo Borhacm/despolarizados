@@ -9,6 +9,8 @@ import {
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const STORY_SIZE = { width: 1080, height: 1920 } as const;
+/** 4:5 — carrusel Instagram (feed); Graph API acepta JPG/PNG por URL pública. */
+export const INSTAGRAM_FEED_SIZE = { width: 1080, height: 1350 } as const;
 
 const TEXT = "#fafafa";
 const MUTED = "#a1a1aa";
@@ -24,6 +26,12 @@ export function truncateTitle(t: string, max = 132): string {
 }
 
 export function truncateTitleStory(t: string, max = 96): string {
+  const s = t.trim();
+  if (s.length <= max) return s;
+  return `${s.slice(0, max - 1)}…`;
+}
+
+export function truncateTitleInstagramFeed(t: string, max = 110): string {
   const s = t.trim();
   if (s.length <= max) return s;
   return `${s.slice(0, max - 1)}…`;
@@ -481,6 +489,266 @@ export function HistoriaShareStoryLayout({
             }}
           >
             {host}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Carrusel Instagram: claim, foto de noticia, barra de ideología, titular y enlaces a Despolarizados. */
+export function InstagramBlindspotLayout({
+  data,
+  coverDataUrl,
+  claim,
+  badge,
+  bloqueLabel,
+  appBaseUrl,
+  historiaUrl,
+}: {
+  data: HistoriaShareFields | null;
+  coverDataUrl: string | null;
+  claim: string;
+  badge: "ANGULO MUERTO" | "SESGO";
+  bloqueLabel: string;
+  appBaseUrl: string;
+  historiaUrl: string;
+}) {
+  const title = data?.titulo_canonico
+    ? truncateTitleInstagramFeed(data.titulo_canonico)
+    : "Comparativa de medios";
+  const mix = data?.mix ?? null;
+  const pct = mix
+    ? mixPercents(mix)
+    : { izq: 0, centro: 0, der: 0 };
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        background: "#0a0a0a",
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+      }}
+    >
+      <div
+        style={{
+          padding: "36px 40px 20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              color: ACCENT,
+            }}
+          >
+            Despolarizados
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: MUTED,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
+          >
+            {badge} · {bloqueLabel}
+          </span>
+        </div>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 22,
+            fontWeight: 650,
+            lineHeight: 1.35,
+            color: "#fde68a",
+          }}
+        >
+          {claim}
+        </p>
+      </div>
+
+      <div
+        style={{
+          width: "100%",
+          height: 560,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(180deg, #111827 0%, #020617 100%)",
+        }}
+      >
+        {coverDataUrl ? (
+          <img
+            src={coverDataUrl}
+            alt=""
+            width={1000}
+            height={520}
+            style={{
+              borderRadius: 10,
+              objectFit: "cover",
+              width: 1000,
+              height: 520,
+              boxShadow: "0 20px 50px rgba(0,0,0,0.55)",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 1000,
+              height: 520,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(135deg, #064e3b 0%, #022c22 100%)",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
+              color: ACCENT,
+              fontSize: 160,
+              fontWeight: 800,
+            }}
+          >
+            D
+          </div>
+        )}
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          padding: "20px 40px 36px",
+          justifyContent: "space-between",
+          gap: 16,
+        }}
+      >
+        {mix ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 11,
+                fontWeight: 700,
+                color: MUTED,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+              }}
+            >
+              Cobertura por orientación
+            </p>
+            <div
+              style={{
+                display: "flex",
+                height: 22,
+                borderRadius: 6,
+                overflow: "hidden",
+                width: "100%",
+                background: "#27272a",
+              }}
+            >
+              {mix.izqPct > 0 ? (
+                <div
+                  style={{
+                    width: `${mix.izqPct}%`,
+                    height: "100%",
+                    background: ROSE,
+                  }}
+                />
+              ) : null}
+              {mix.centroPct > 0 ? (
+                <div
+                  style={{
+                    width: `${mix.centroPct}%`,
+                    height: "100%",
+                    background: ZINC_BAR,
+                  }}
+                />
+              ) : null}
+              {mix.derPct > 0 ? (
+                <div
+                  style={{
+                    width: `${mix.derPct}%`,
+                    height: "100%",
+                    background: SKY,
+                  }}
+                />
+              ) : null}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 14,
+                fontWeight: 600,
+                color: MUTED,
+              }}
+            >
+              <span>
+                Izq <span style={{ color: TEXT }}>{pct.izq}%</span>
+              </span>
+              <span>
+                Centro <span style={{ color: TEXT }}>{pct.centro}%</span>
+              </span>
+              <span>
+                Der <span style={{ color: TEXT }}>{pct.der}%</span>
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p style={{ margin: 0, fontSize: 16, color: MUTED }}>
+            Sin datos de cobertura por orientación.
+          </p>
+        )}
+
+        <p
+          style={{
+            margin: 0,
+            fontSize: 30,
+            fontWeight: 700,
+            lineHeight: 1.25,
+            color: TEXT,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {title}
+        </p>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            borderTop: "1px solid #27272a",
+            paddingTop: 14,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: MUTED,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            Enlaces
+          </span>
+          <span style={{ fontSize: 17, fontWeight: 700, color: ACCENT }}>
+            {appBaseUrl}
+          </span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>
+            {historiaUrl}
           </span>
         </div>
       </div>

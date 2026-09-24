@@ -5,7 +5,7 @@ import {
 } from "@/lib/instagram-brief";
 import {
   isInstagramGraphConfigured,
-  publishInstagramImagePost,
+  publishInstagramCarouselPost,
 } from "@/lib/instagram-graph";
 import { createServiceClient } from "@/lib/supabase/service";
 import { NextResponse } from "next/server";
@@ -39,13 +39,7 @@ export async function GET(request: Request) {
     });
     const caption = buildInstagramBriefCaption(blocks);
 
-    const selectedImage = blocks.find((b) => b.imageUrl)?.imageUrl;
-    if (!selectedImage) {
-      return NextResponse.json(
-        { error: "No hay imagen disponible para publicar en Instagram." },
-        { status: 500 },
-      );
-    }
+    const carouselUrls = blocks.map((b) => b.renderedImageUrl);
 
     const dryRun =
       new URL(request.url).searchParams.get("dryRun") === "1" ||
@@ -55,14 +49,14 @@ export async function GET(request: Request) {
       return NextResponse.json({
         ok: true,
         dryRun: true,
-        imageUrl: selectedImage,
+        carouselImageUrls: carouselUrls,
         caption,
         blocks,
       });
     }
 
-    const publish = await publishInstagramImagePost({
-      imageUrl: selectedImage,
+    const publish = await publishInstagramCarouselPost({
+      imageUrls: carouselUrls,
       caption,
     });
 
@@ -73,7 +67,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       ok: true,
       mediaId: publish.mediaId,
-      imageUrl: selectedImage,
+      carouselImageUrls: carouselUrls,
       blocks,
     });
   } catch (e) {

@@ -107,10 +107,17 @@ La respuesta devuelve `sent`, `skipped` y posibles `errors` por suscriptor.
 
 ### 9. Publicación automática en Instagram (3 bloques)
 
-El proyecto incluye un cron que publica una pieza en Instagram con 3 bloques:
-- `IZQUIERDA`
-- `CENTRO`
-- `DERECHA`
+El proyecto incluye un cron que publica un **carrusel de 3 imágenes** (izquierda · centro · derecha). Cada slide se genera en el servidor (PNG 4:5) e incluye:
+
+- Claim de **para quién** es el ángulo muerto (según la concentración de cobertura)
+- Imagen de la noticia (o placeholder)
+- Barra de ideología (izq / centro / der)
+- Titular
+- Enlaces a Despolarizados (sitio + ficha de la historia)
+
+Ruta de previsualización (útil para depurar el diseño):
+
+- `/historia/{id}/instagram-blindspot-image?bloque=izquierda` (o `centro` / `derecha`)
 
 Cada bloque se etiqueta automáticamente como:
 - `ANGULO MUERTO` si la cobertura dominante de ese lado es >= 68%

@@ -2,6 +2,7 @@ import { Nav } from "@/components/Nav";
 import { createServerSupabaseOrNull } from "@/lib/supabase/server";
 import { NewsletterFlash } from "@/components/NewsletterFlash";
 import { ScrollSubscribeModal } from "@/components/ScrollSubscribeModal";
+import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { THEME_STORAGE_KEY } from "@/lib/theme-storage";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -28,17 +29,11 @@ export const metadata: Metadata = {
     "Noticias agrupadas desde varios medios para ver el contexto y reducir sesgos de lectura.",
   icons: {
     icon: [
-      { url: "/favicon.ico", type: "image/x-icon" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon", type: "image/png", sizes: "32x32" },
+      { url: "/logo.svg", type: "image/svg+xml" },
     ],
-    apple: {
-      url: "/apple-touch-icon.png",
-      sizes: "180x180",
-      type: "image/png",
-    },
+    shortcut: ["/icon"],
+    apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
   },
 };
 
@@ -78,6 +73,7 @@ export default async function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
+        <AnalyticsConsent />
         <Nav userEmail={userEmail} />
         <Suspense fallback={null}>
           <NewsletterFlash />
