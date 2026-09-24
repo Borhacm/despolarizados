@@ -176,6 +176,9 @@ async function applyChanges(
     }
     const moving = g.items.filter((it) => it.historiaId !== target);
     for (const it of moving) if (it.historiaId) touchedOld.add(it.historiaId);
+    // Solo se recalculan las historias que ganan artículos (o son nuevas); recalcular las
+    // 1.000 del periodo en cada ejecución costaba ~10 min en GitHub Actions.
+    const changed = moving.length > 0 || !targets[i];
     for (let k = 0; k < moving.length; k += 200) {
       const ids = moving.slice(k, k + 200).map((it) => it.id);
       const id = target;
@@ -184,7 +187,7 @@ async function applyChanges(
         "mover artículos",
       );
     }
-    finalIds.push(target);
+    if (changed) finalIds.push(target);
   }
   let removed = 0;
   for (const hid of touchedOld) {
@@ -212,7 +215,7 @@ async function applyChanges(
       }
     }
   }
-  console.log(`\nAplicado: ${finalIds.length} historias recalculadas, ${removed} historias vacías eliminadas.`);
+  console.log(`\nAplicado: ${finalIds.length} historias recalculadas (con cambios), ${removed} historias vacías eliminadas.`);
 }
 
 async function main() {
