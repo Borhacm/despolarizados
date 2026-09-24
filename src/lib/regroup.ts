@@ -169,10 +169,10 @@ function mergePass(
     // amplia de decenas de artículos: se le exige algo menos, siempre con protagonista común.
     const strength = protagonistStrength(a, b);
     if (strength < 0.2) return -1;
-    // Cuanto más claro es el protagonista común (p. ej. «Maricarmen» en la mitad o más de
+    // Cuanto más claro es el protagonista común (p. ej. «Maricarmen» en el 60 % o más de
     // los titulares de ambos), menos parecido semántico hace falta para unirlos.
     let t = Math.min(a.items.length, b.items.length) <= smallMax ? smallTh : th;
-    if (strength >= 0.5) t = Math.min(t, strongTh);
+    if (strength >= 0.6) t = Math.min(t, strongTh);
     // Poda barata por centroide antes del cálculo caro.
     if (cosineSimilarity(a.centroid, b.centroid) < t - 0.03) return -1;
     const s = averageLinkage(a, b);
@@ -262,7 +262,7 @@ function pruneOutliers(groups: Working[], th: number): Working[] {
 export function regroupItems(items: RegroupItem[], opts: RegroupOptions = {}): RegroupGroup[] {
   const clusterThreshold = opts.clusterThreshold ?? 0.88;
   const mergeThreshold = opts.mergeThreshold ?? 0.87;
-  const smallMergeThreshold = opts.smallMergeThreshold ?? Number(process.env.REGROUP_SMALL_TH ?? 0.85);
+  const smallMergeThreshold = opts.smallMergeThreshold ?? Number(process.env.REGROUP_SMALL_TH ?? 0.86);
   const smallGroupMax = opts.smallGroupMax ?? 4;
   const windowMs = (opts.windowHours ?? 72) * 3600 * 1000;
   const maxPerMedio = opts.maxPerMedio ?? 2;
