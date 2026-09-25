@@ -12,6 +12,7 @@ export type EditionItem = {
   url: string;
   imageUrl: string | null;
   medioCount: number;
+  articleCount: number;
   coverageMix: CoverageMix | null;
 };
 
@@ -32,6 +33,7 @@ type Row = {
   titulo_canonico: string;
   resumen_canonico: string | null;
   medio_count: number;
+  article_count: number;
 };
 
 async function toItems(supabase: SupabaseClient, rows: Row[]): Promise<EditionItem[]> {
@@ -47,6 +49,7 @@ async function toItems(supabase: SupabaseClient, rows: Row[]): Promise<EditionIt
     url: buildHistoriaUrl(r.id),
     imageUrl: covers.get(r.id) ?? null,
     medioCount: r.medio_count,
+    articleCount: r.article_count,
     coverageMix: mixes.get(r.id) ?? null,
   }));
 }
@@ -60,7 +63,7 @@ async function topPlural(
 ): Promise<EditionItem[]> {
   const { data, error } = await supabase
     .from("historias")
-    .select("id, titulo_canonico, resumen_canonico, medio_count")
+    .select("id, titulo_canonico, resumen_canonico, medio_count, article_count")
     .gte("ultima_pub", sinceIso)
     .gte("medio_count", minMedios)
     .order("importancia", { ascending: false })
@@ -90,6 +93,7 @@ export async function fetchWeeklyEdition(supabase: SupabaseClient): Promise<Week
         titulo_canonico: b.titulo_canonico,
         resumen_canonico: b.resumen_canonico,
         medio_count: b.medio_count,
+        article_count: b.article_count,
       }));
   const [sinIzquierda, sinDerecha] = await Promise.all([
     toItems(supabase, pick("izquierda")),

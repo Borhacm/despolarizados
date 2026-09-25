@@ -15,7 +15,8 @@
     "reingest:prune": "node --import tsx scripts/reingest-and-prune.ts",
     "recompute:recientes": "node --import tsx scripts/recompute-recientes.ts",
     "reingest-and-prune": "node --import tsx scripts/reingest-and-prune.ts",
-    "reagrupar": "node --import tsx scripts/reagrupar.ts"
+    "reagrupar": "node --import tsx scripts/reagrupar.ts",
+    "limpiar:entidades": "node --import tsx scripts/limpiar-entidades.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
